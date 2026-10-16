@@ -159,8 +159,8 @@
             <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
         </div>
         <div class="control-group">
-            <label>Turn Speed Factor: <span id="val-turnSpeedFactor">0.035</span></label>
-            <input type="range" id="turnSpeedFactor" min="0.005" max="0.1" step="0.005" value="0.035">
+            <label>Turn Speed Factor: <span id="val-turnSpeedFactor">0.004</span></label>
+            <input type="range" id="turnSpeedFactor" min="0.0001" max="0.02" step="0.0005" value="0.004">
         </div>
 
         <h2>VEHICLE VISUALS & SCALE</h2>
@@ -234,7 +234,7 @@
             accel: 0.02,
             brake: 0.015,
             topSpeed: 1.5,
-            turnSpeedFactor: 0.035,
+            turnSpeedFactor: 0.004,
             carScale: 1.0,
             shininess: 0.95,
             fov: 65,
@@ -307,8 +307,8 @@
         const superShinyMat = new THREE.MeshStandardMaterial({ 
             color: 0x2563eb, 
             metalness: 1.0, 
-            roughness: 0.02, 
-            envMapIntensity: 2.0 
+            roughness: 0.02,
+            envMapIntensity: 2.0
         });
         const roofShinyMat = new THREE.MeshStandardMaterial({ 
             color: 0x0f172a, 
@@ -322,6 +322,9 @@
             superShinyMat.metalness = m;
             superShinyMat.roughness = r;
             roofShinyMat.roughness = Math.min(1.0, r + 0.05);
+
+            // If user uploaded a custom model, don't overwrite their materials unless they want us to, 
+            // but keep placeholder car clean and bright.
         }
 
         function updateJsonBox() {
@@ -348,7 +351,7 @@
             }
         });
 
-        // Scene & Cube Camera for Ultra Reflections / Mirror Shine
+        // Scene Setup
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
@@ -365,10 +368,10 @@
         renderer.toneMappingExposure = 1.3;
         container.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
         dirLight.position.set(40, 100, 50);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
@@ -414,7 +417,7 @@
 
         updateUIFromState();
 
-        // Model Uploader
+        // Model Uploader with Material Color Preservation Check
         const fileInput = document.getElementById('modelUpload');
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -434,7 +437,12 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
-                                child.material = superShinyMat;
+                                // Preserve original custom textures/colors if present, but boost shine
+                                if (child.material) {
+                                    child.material.metalness = Math.max(child.material.metalness || 0, 0.8);
+                                    child.material.roughness = Math.min(child.material.roughness || 1, 0.15);
+                                    child.material.needsUpdate = true;
+                                }
                             }
                         });
                         carModelGroup.add(loadedMesh);
@@ -450,7 +458,11 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
-                                child.material = superShinyMat;
+                                if (child.material) {
+                                    child.material.metalness = Math.max(child.material.metalness || 0, 0.8);
+                                    child.material.roughness = Math.min(child.material.roughness || 1, 0.15);
+                                    child.material.needsUpdate = true;
+                                }
                             }
                         });
                         carModelGroup.add(decodedData);
@@ -481,7 +493,7 @@
         let currentSpeed = 0;
         let carAngle = 0;
 
-        // Physics & Animation Loop
+        // Physics & Animation Loop (Realistic Concorde / Vehicle turning scaled proportionally to speed)
         function animate() {
             requestAnimationFrame(animate);
 
@@ -495,12 +507,12 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            // Turn speed = speed * turn speed factor
-            if (Math.abs(currentSpeed) > 0.01) {
-                const currentTurnRate = currentSpeed * physics.turnSpeedFactor;
+            // Realistic turning rate: scales directly with speed so you don't snap 90 degrees at mach speeds
+            if (Math.abs(currentSpeed) > 0.005) {
+                const dynamicTurnRate = currentSpeed * physics.turnSpeedFactor;
                 const turnMultiplier = currentSpeed > 0 ? 1 : -1;
-                if (keys.a) carAngle += currentTurnRate * turnMultiplier;
-                if (keys.d) carAngle -= currentTurnRate * turnMultiplier;
+                if (keys.a) carAngle += dynamicTurnRate * turnMultiplier;
+                if (keys.d) carAngle -= dynamicTurnRate * turnMultiplier;
             }
 
             carContainer.rotation.y = carAngle;
