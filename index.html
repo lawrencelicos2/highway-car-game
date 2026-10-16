@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Grid Highway Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: monospace;
+            color: #fff;
+        }
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #3b82f6;
+            padding: 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+            color: #60a5fa;
+            letter-spacing: 1px;
+        }
+        p {
+            margin: 4px 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="info">
+        <h1>GRID HIGHWAY TEST</h1>
+        <p>[W / S] Accelerate / Brake</p>
+        <p>[A / D] Steer Left / Right</p>
+        <p>Status: Ready for Cloudflare Deploy</p>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // Setup Scene, Camera, Renderer
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050508);
+        scene.fog = new THREE.FogExp2(0x050508, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x3b82f6, 1.5);
+        dirLight.position.set(0, 50, -50);
+        scene.add(dirLight);
+
+        // Create Grid Landscape Floor
+        const gridHelper = new THREE.GridHelper(1000, 100, 0x3b82f6, 0x1e293b);
+        gridHelper.position.y = -0.01;
+        scene.add(gridHelper);
+
+        const planeGeo = new THREE.PlaneGeometry(1000, 1000);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0x090a10, roughness: 0.9 });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.position.y = -0.05;
+        scene.add(plane);
+
+        // Highway Road Mesh
+        const roadWidth = 16;
+        const roadGeo = new THREE.PlaneGeometry(roadWidth, 1000);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.8 });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        scene.add(road);
+
+        // Center Lanes (Dashed look via repeating lines or simple geometry)
+        const lineGeo = new THREE.PlaneGeometry(0.4, 1000);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+        const centerLine = new THREE.Mesh(lineGeo, lineMat);
+        centerLine.rotation.x = -Math.PI / 2;
+        centerLine.position.y = 0.01;
+        scene.add(centerLine);
+
+        // Streetlights Generator along the highway
+        const poleGeo = new THREE.BoxGeometry(0.3, 8, 0.3);
+        const armGeo = new THREE.BoxGeometry(2, 0.3, 0.3);
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+
+        const streetlightGroup = new THREE.Group();
+        const spacing = 40;
+        const totalLamps = 50;
+
+        for (let i = -totalLamps / 2; i < totalLamps / 2; i++) {
+            // Left Side Pole
+            const leftPole = new THREE.Mesh(poleGeo, lampMat);
+            leftPole.position.set(-roadWidth / 2 - 1, 4, i * spacing);
+             streetlightGroup.add(leftPole);
+
+            const leftArm = new THREE.Mesh(armGeo, lampMat);
+            leftArm.position.set(-roadWidth / 2, 7.8, i * spacing);
+            streetlightGroup.add(leftArm);
+
+            // Right Side Pole
+            const rightPole = new THREE.Mesh(poleGeo, lampMat);
+            rightPole.position.set(roadWidth / 2 + 1, 4, i * spacing);
+            streetlightGroup.add(rightPole);
+
+            const rightArm = new THREE.Mesh(armGeo, lampMat);
+            rightArm.position.set(roadWidth / 2, 7.8, i * spacing);
+            streetlightGroup.add(rightArm);
+        }
+        scene.add(streetlightGroup);
+
+        // Player / Chase Car
+        const carGeo = new THREE.BoxGeometry(2, 1, 4);
+        const carMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.2 });
+        const car = new THREE.Mesh(carGeo, carMat);
+        car.position.set(0, 0.5, 0);
+        scene.add(car);
+
+        // Controls State
+        const keys = { w: false, s: false, a: false, d: false };
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = true;
+            if (e.key === 's' || e.key === 'S') keys.s = true;
+            if (e.key === 'a' || e.key === 'A') keys.a = true;
+            if (e.key === 'd' || e.key === 'D') keys.d = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'W') keys.w = false;
+            if (e.key === 's' || e.key === 'S') keys.s = false;
+            if (e.key === 'a' || e.key === 'A') keys.a = false;
+            if (e.key === 'd' || e.key === 'D') keys.d = false;
+        });
+
+        let speed = 0;
+        const maxSpeed = 1.2;
+        const acceleration = 0.02;
+        const deceleration = 0.015;
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Car Physics & Movement
+            if (keys.w) speed = Math.min(speed + acceleration, maxSpeed);
+            else if (keys.s) speed = Math.max(speed - acceleration, -maxSpeed / 2);
+            else {
+                if (speed > 0) speed = Math.max(0, speed - deceleration);
+                if (speed < 0) speed = Math.min(0, speed + deceleration);
+            }
+
+            if (keys.a && Math.abs(speed) > 0.1) car.position.x -= 0.3;
+            if (keys.d && Math.abs(speed) > 0.1) car.position.x += 0.3;
+
+            // Constrain car to road width
+            car.position.x = Math.max(-roadWidth / 2 + 1.5, Math.min(roadWidth / 2 - 1.5, car.position.x));
+
+            // Move road/environment relative to car speed to simulate endless driving
+            car.position.z -= speed;
+
+            // Loop environment chunks for endless illusion
+            if (car.position.z < -spacing) {
+                car.position.z += spacing;
+            }
+            if (car.position.z > spacing) {
+                car.position.z -= spacing;
+            }
+
+            road.position.z = car.position.z - 200;
+            centerLine.position.z = road.position.z;
+            gridHelper.position.z = Math.floor(car.position.z / 50) * 50;
+
+            // Smooth Camera Follow
+            camera.position.x = car.position.x * 0.5;
+            camera.position.y = car.position.y + 4;
+            camera.position.z = car.position.z + 10;
+            camera.lookAt(car.position.x, car.position.y + 1, car.position.z - 10);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Responsive Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
