@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>White Grid Physics Test Studio</title>
+    <title>White Grid Physics Test Studio & JSON Config</title>
     <style>
         :root {
             --bg: #e2e8f0;
-            --panel: rgba(255, 255, 255, 0.9);
+            --panel: rgba(255, 255, 255, 0.92);
             --accent: #2563eb;
             --text: #1e293b;
             --border: #cbd5e1;
@@ -33,33 +33,33 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 330px;
+            width: 340px;
             background: var(--panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px;
             z-index: 10;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             max-height: 92vh;
             overflow-y: auto;
         }
         h2 {
-            margin: 0 0 12px 0;
-            font-size: 15px;
+            margin: 0 0 10px 0;
+            font-size: 14px;
             color: #2563eb;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 6px;
+            padding-bottom: 5px;
         }
         .control-group {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         label {
             display: flex;
             justify-content: space-between;
             font-size: 11px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
             color: #64748b;
         }
         label span {
@@ -71,27 +71,45 @@
             accent-color: var(--accent);
             cursor: pointer;
         }
-        .upload-section {
-            margin-top: 15px;
-            padding-top: 15px;
+        .json-section {
+            margin-top: 12px;
+            padding-top: 10px;
             border-top: 1px solid var(--border);
         }
-        .upload-btn {
+        textarea {
+            width: 100%;
+            height: 60px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 6px;
+            box-sizing: border-box;
+            resize: none;
+            color: #334155;
+        }
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        button, .upload-btn {
             display: block;
             width: 100%;
             background: #2563eb;
             color: #ffffff;
             border: 1px solid #1d4ed8;
-            padding: 10px;
+            padding: 8px;
             border-radius: 6px;
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
             box-sizing: border-box;
             transition: background 0.2s;
         }
-        .upload-btn:hover {
+        button:hover, .upload-btn:hover {
             background: #1d4ed8;
         }
         input[type="file"] {
@@ -103,7 +121,7 @@
             left: 20px;
             background: var(--panel);
             border: 1px solid var(--border);
-            padding: 15px 20px;
+            padding: 12px 18px;
             border-radius: 10px;
             z-index: 10;
             font-family: monospace;
@@ -112,8 +130,8 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
         #hud div {
-            font-size: 14px;
-            margin: 3px 0;
+            font-size: 13px;
+            margin: 2px 0;
             color: #2563eb;
         }
     </style>
@@ -141,8 +159,18 @@
             <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
         </div>
         <div class="control-group">
-            <label>Turn Rate (Steer): <span id="val-turnRate">0.03</span></label>
-            <input type="range" id="turnRate" min="0.005" max="0.08" step="0.005" value="0.03">
+            <label>Turn Speed Factor: <span id="val-turnSpeedFactor">0.035</span></label>
+            <input type="range" id="turnSpeedFactor" min="0.005" max="0.1" step="0.005" value="0.035">
+        </div>
+
+        <h2>VEHICLE VISUALS & SCALE</h2>
+        <div class="control-group">
+            <label>Car Size (Scale): <span id="val-carScale">1.0</span>x</label>
+            <input type="range" id="carScale" min="0.2" max="3.0" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+            <label>Shininess (Metal/Rough): <span id="val-shininess">0.95</span></label>
+            <input type="range" id="shininess" min="0.0" max="1.0" step="0.05" value="0.95">
         </div>
 
         <h2>CAMERA STUDIO</h2>
@@ -173,7 +201,16 @@
             <input type="range" id="rotZ" min="-180" max="180" step="1" value="0">
         </div>
 
-        <div class="upload-section">
+        <div class="json-section">
+            <label>JSON Config (Copy / Paste):</label>
+            <textarea id="jsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyJson">Copy JSON</button>
+                <button id="loadJson">Load JSON</button>
+            </div>
+        </div>
+
+        <div class="upload-section" style="margin-top: 10px;">
             <label class="upload-btn" for="modelUpload">Upload Car (.glb / .gltf / .fbx)</label>
             <input type="file" id="modelUpload" accept=".glb,.gltf,.fbx">
         </div>
@@ -181,7 +218,7 @@
 
     <div id="hud">
         <div id="hud-speed">SPEED: 0 MPH</div>
-        <div id="hud-controls">[W/S] Drive | [A/D] Steer & Turn</div>
+        <div id="hud-controls">[W/S] Drive | [A/D] Steer</div>
     </div>
 
     <!-- Three.js & Loaders CDN -->
@@ -197,7 +234,9 @@
             accel: 0.02,
             brake: 0.015,
             topSpeed: 1.5,
-            turnRate: 0.03,
+            turnSpeedFactor: 0.035,
+            carScale: 1.0,
+            shininess: 0.95,
             fov: 65,
             zoom: 9,
             smoothing: 0.12,
@@ -206,13 +245,14 @@
             rotZ: 0
         };
 
-        // UI Binding Setup
         const bindings = [
             { id: 'weight', key: 'weight', unit: ' kg' },
             { id: 'accel', key: 'accel', unit: '' },
             { id: 'brake', key: 'brake', unit: '' },
             { id: 'topSpeed', key: 'topSpeed', unit: '' },
-            { id: 'turnRate', key: 'turnRate', unit: '' },
+            { id: 'turnSpeedFactor', key: 'turnSpeedFactor', unit: '' },
+            { id: 'carScale', key: 'carScale', unit: 'x' },
+            { id: 'shininess', key: 'shininess', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
             { id: 'zoom', key: 'zoom', unit: 'm' },
             { id: 'smoothing', key: 'smoothing', unit: '' },
@@ -220,6 +260,22 @@
             { id: 'rotY', key: 'rotY', unit: '°' },
             { id: 'rotZ', key: 'rotZ', unit: '°' }
         ];
+
+        function updateUIFromState() {
+            bindings.forEach(b => {
+                const input = document.getElementById(b.id);
+                const span = document.getElementById(`val-${b.id}`);
+                if (input && span) {
+                    input.value = physics[b.key];
+                    span.textContent = physics[b.key] + b.unit;
+                }
+            });
+            camera.fov = physics.fov;
+            camera.updateProjectionMatrix();
+            updateCarTransform();
+            updateCarMaterials();
+            updateJsonBox();
+        }
 
         bindings.forEach(b => {
             const input = document.getElementById(b.id);
@@ -231,19 +287,68 @@
                     camera.fov = physics.fov;
                     camera.updateProjectionMatrix();
                 }
-                if(b.key.startsWith('rot')) {
-                    updateCarRotation();
+                if(b.key.startsWith('rot') || b.key === 'carScale') {
+                    updateCarTransform();
                 }
+                if(b.key === 'shininess') {
+                    updateCarMaterials();
+                }
+                updateJsonBox();
             });
         });
 
-        function updateCarRotation() {
+        function updateCarTransform() {
             carModelGroup.rotation.x = THREE.MathUtils.degToRad(physics.rotX);
             carModelGroup.rotation.y = THREE.MathUtils.degToRad(physics.rotY);
             carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
+            carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
         }
 
-        // Clean White & Grid Scene Setup
+        const superShinyMat = new THREE.MeshStandardMaterial({ 
+            color: 0x2563eb, 
+            metalness: 1.0, 
+            roughness: 0.02, 
+            envMapIntensity: 2.0 
+        });
+        const roofShinyMat = new THREE.MeshStandardMaterial({ 
+            color: 0x0f172a, 
+            metalness: 0.9, 
+            roughness: 0.05 
+        });
+
+        function updateCarMaterials() {
+            const m = 1.0;
+            const r = Math.max(0.01, 1.0 - physics.shininess);
+            superShinyMat.metalness = m;
+            superShinyMat.roughness = r;
+            roofShinyMat.roughness = Math.min(1.0, r + 0.05);
+        }
+
+        function updateJsonBox() {
+            document.getElementById('jsonBox').value = JSON.stringify(physics, null, 2);
+        }
+
+        document.getElementById('copyJson').addEventListener('click', () => {
+            const box = document.getElementById('jsonBox');
+            box.select();
+            navigator.clipboard.writeText(box.value);
+            alert('Settings JSON copied to clipboard!');
+        });
+
+        document.getElementById('loadJson').addEventListener('click', () => {
+            try {
+                const parsed = JSON.parse(document.getElementById('jsonBox').value);
+                Object.keys(physics).forEach(k => {
+                    if (parsed[k] !== undefined) physics[k] = parsed[k];
+                });
+                updateUIFromState();
+                alert('Settings loaded successfully!');
+            } catch (err) {
+                alert('Invalid JSON formatting in text box.');
+            }
+        });
+
+        // Scene & Cube Camera for Ultra Reflections / Mirror Shine
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
@@ -256,19 +361,18 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
         container.appendChild(renderer.domElement);
 
-        // Bright Studio Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        dirLight.position.set(30, 80, 50);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        dirLight.position.set(40, 100, 50);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
-        dirLight.shadow.camera.near = 0.5;
-        dirLight.shadow.camera.far = 250;
         const d = 100;
         dirLight.shadow.camera.left = -d;
         dirLight.shadow.camera.right = d;
@@ -276,9 +380,9 @@
         dirLight.shadow.camera.bottom = -d;
         scene.add(dirLight);
 
-        // Infinite White Ground Plane with Grid
+        // Ground Plane & Grid
         const planeGeo = new THREE.PlaneGeometry(2000, 2000);
-        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 1.0 });
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.8 });
         const plane = new THREE.Mesh(planeGeo, planeMat);
         plane.rotation.x = -Math.PI / 2;
         plane.receiveShadow = true;
@@ -288,7 +392,7 @@
         gridHelper.position.y = 0.01;
         scene.add(gridHelper);
 
-        // Vehicle Container & Default Placeholder Car
+        // Vehicle Setup
         const carContainer = new THREE.Group();
         carContainer.position.set(0, 0, 0);
         scene.add(carContainer);
@@ -297,22 +401,20 @@
         carContainer.add(carModelGroup);
 
         const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.2);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.3, roughness: 0.2 });
-        const carBody = new THREE.Mesh(bodyGeo, bodyMat);
+        const carBody = new THREE.Mesh(bodyGeo, superShinyMat);
         carBody.position.y = 0.4;
         carBody.castShadow = true;
         carModelGroup.add(carBody);
 
         const roofGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.1 });
-        const carRoof = new THREE.Mesh(roofGeo, roofMat);
+        const carRoof = new THREE.Mesh(roofGeo, roofShinyMat);
         carRoof.position.set(0, 1.1, -0.2);
         carRoof.castShadow = true;
         carModelGroup.add(carRoof);
 
-        updateCarRotation();
+        updateUIFromState();
 
-        // Model Uploader (.glb, .gltf, .fbx)
+        // Model Uploader
         const fileInput = document.getElementById('modelUpload');
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -323,7 +425,6 @@
             reader.readAsArrayBuffer(file);
             reader.onload = function (event) {
                 const contents = event.target.result;
-
                 if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
                     const loader = new THREE.GLTFLoader();
                     loader.parse(contents, '', (gltf) => {
@@ -333,11 +434,12 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
+                                child.material = superShinyMat;
                             }
                         });
                         carModelGroup.add(loadedMesh);
-                        updateCarRotation();
-                    }, (err) => { console.error(err); alert('Failed to parse GLB/GLTF model.'); });
+                        updateCarTransform();
+                    }, (err) => { console.error(err); alert('Failed to parse GLB/GLTF.'); });
                 } 
                 else if (fileName.endsWith('.fbx')) {
                     try {
@@ -348,13 +450,14 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
+                                child.material = superShinyMat;
                             }
                         });
                         carModelGroup.add(decodedData);
-                        updateCarRotation();
+                        updateCarTransform();
                     } catch (err) {
                         console.error(err);
-                        alert('Failed to parse FBX model. Ensure it is a valid binary FBX.');
+                        alert('Failed to parse FBX.');
                     }
                 }
             };
@@ -378,7 +481,7 @@
         let currentSpeed = 0;
         let carAngle = 0;
 
-        // Animation / Real Turn Physics Loop
+        // Physics & Animation Loop
         function animate() {
             requestAnimationFrame(animate);
 
@@ -392,20 +495,20 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            // Real steering rotation based on speed and turn rate
-            if (Math.abs(currentSpeed) > 0.02) {
+            // Turn speed = speed * turn speed factor
+            if (Math.abs(currentSpeed) > 0.01) {
+                const currentTurnRate = currentSpeed * physics.turnSpeedFactor;
                 const turnMultiplier = currentSpeed > 0 ? 1 : -1;
-                if (keys.a) carAngle += physics.turnRate * turnMultiplier;
-                if (keys.d) carAngle -= physics.turnRate * turnMultiplier;
+                if (keys.a) carAngle += currentTurnRate * turnMultiplier;
+                if (keys.d) carAngle -= currentTurnRate * turnMultiplier;
             }
 
             carContainer.rotation.y = carAngle;
 
-            // Move car forward in the direction it is facing
             carContainer.position.x += Math.sin(carAngle) * currentSpeed;
             carContainer.position.z += Math.cos(carAngle) * currentSpeed;
 
-            // Smooth 3D Camera Follow orbiting behind the car
+            // Camera Follow
             const targetCamX = carContainer.position.x - Math.sin(carAngle) * physics.zoom;
             const targetCamY = carContainer.position.y + (physics.zoom * 0.4);
             const targetCamZ = carContainer.position.z - Math.cos(carAngle) * physics.zoom;
@@ -416,7 +519,6 @@
 
             camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
 
-            // Update HUD Speed Display
             document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 85)} MPH`;
 
             renderer.render(scene, camera);
