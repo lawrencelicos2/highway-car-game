@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Highway Game & Physics Tweak Studio</title>
+    <title>High-Graphics Highway & Vehicle Studio</title>
     <style>
         :root {
-            --bg: #0b0f19;
-            --panel: rgba(15, 23, 42, 0.85);
+            --bg: #030407;
+            --panel: rgba(10, 15, 30, 0.9);
             --accent: #3b82f6;
             --text: #e2e8f0;
-            --border: #334155;
+            --border: #1e293b;
         }
         body {
             margin: 0;
@@ -33,33 +33,33 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 320px;
+            width: 330px;
             background: var(--panel);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(16px);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 20px;
             z-index: 10;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-            max-height: 90vh;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            max-height: 92vh;
             overflow-y: auto;
         }
         h2 {
-            margin: 0 0 15px 0;
-            font-size: 16px;
+            margin: 0 0 12px 0;
+            font-size: 15px;
             color: #60a5fa;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
         .control-group {
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
         label {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
-            margin-bottom: 4px;
+            font-size: 11px;
+            margin-bottom: 3px;
             color: #94a3b8;
         }
         label span {
@@ -85,7 +85,7 @@
             padding: 10px;
             border-radius: 6px;
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
             box-sizing: border-box;
@@ -109,6 +109,7 @@
             z-index: 10;
             font-family: monospace;
             pointer-events: none;
+            backdrop-filter: blur(10px);
         }
         #hud div {
             font-size: 14px;
@@ -122,53 +123,59 @@
     <div id="canvas-container"></div>
 
     <div id="ui-panel">
-        <h2>PHYSICS & CAMERA TUNER</h2>
-        
+        <h2>PHYSICS STUDIO</h2>
         <div class="control-group">
             <label>Weight (Mass): <span id="val-weight">1000</span> kg</label>
             <input type="range" id="weight" min="200" max="3000" step="50" value="1000">
         </div>
-
         <div class="control-group">
             <label>Forward Accel: <span id="val-accel">0.02</span></label>
             <input type="range" id="accel" min="0.005" max="0.1" step="0.005" value="0.02">
         </div>
-
         <div class="control-group">
             <label>Braking Decel: <span id="val-brake">0.015</span></label>
             <input type="range" id="brake" min="0.005" max="0.05" step="0.005" value="0.015">
         </div>
-
         <div class="control-group">
             <label>Top Speed: <span id="val-topSpeed">1.5</span></label>
             <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
         </div>
-
         <div class="control-group">
             <label>Steer Sensitivity: <span id="val-steer">0.3</span></label>
             <input type="range" id="steer" min="0.05" max="1.0" step="0.05" value="0.3">
         </div>
 
-        <h2>CAMERA SETTINGS</h2>
-
+        <h2>CAMERA STUDIO</h2>
         <div class="control-group">
-            <label>Field of View (FOV): <span id="val-fov">60</span>°</label>
-            <input type="range" id="fov" min="30" max="120" step="1" value="60">
+            <label>Field of View (FOV): <span id="val-fov">65</span>°</label>
+            <input type="range" id="fov" min="30" max="120" step="1" value="65">
+        </div>
+        <div class="control-group">
+            <label>Camera Zoom (Dist): <span id="val-zoom">9</span>m</label>
+            <input type="range" id="zoom" min="3" max="30" step="1" value="9">
+        </div>
+        <div class="control-group">
+            <label>Camera Smoothing: <span id="val-smoothing">0.12</span></label>
+            <input type="range" id="smoothing" min="0.01" max="0.5" step="0.01" value="0.12">
         </div>
 
+        <h2>MODEL ORIENTATION FIXER</h2>
         <div class="control-group">
-            <label>Camera Zoom (Dist): <span id="val-zoom">10</span>m</label>
-            <input type="range" id="zoom" min="3" max="30" step="1" value="10">
+            <label>Model Rotation X: <span id="val-rotX">0</span>°</label>
+            <input type="range" id="rotX" min="-180" max="180" step="1" value="0">
         </div>
-
         <div class="control-group">
-            <label>Camera Smoothing: <span id="val-smoothing">0.1</span></label>
-            <input type="range" id="smoothing" min="0.01" max="0.5" step="0.01" value="0.1">
+            <label>Model Rotation Y: <span id="val-rotY">180</span>°</label>
+            <input type="range" id="rotY" min="-180" max="180" step="1" value="180">
+        </div>
+        <div class="control-group">
+            <label>Model Rotation Z: <span id="val-rotZ">0</span>°</label>
+            <input type="range" id="rotZ" min="-180" max="180" step="1" value="0">
         </div>
 
         <div class="upload-section">
-            <label class="upload-btn" for="modelUpload">Upload Custom 3D Model (.glb / .gltf)</label>
-            <input type="file" id="modelUpload" accept=".glb,.gltf">
+            <label class="upload-btn" for="modelUpload">Upload Car (.glb / .gltf / .fbx)</label>
+            <input type="file" id="modelUpload" accept=".glb,.gltf,.fbx">
         </div>
     </div>
 
@@ -177,9 +184,11 @@
         <div id="hud-controls">[W/S] Drive | [A/D] Steer</div>
     </div>
 
-    <!-- Three.js and GLTFLoader Libraries -->
+    <!-- Three.js & Loaders CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
 
     <script>
         // Physics & Tuning Configuration State
@@ -189,9 +198,12 @@
             brake: 0.015,
             topSpeed: 1.5,
             steer: 0.3,
-            fov: 60,
-            zoom: 10,
-            smoothing: 0.1
+            fov: 65,
+            zoom: 9,
+            smoothing: 0.12,
+            rotX: 0,
+            rotY: 180,
+            rotZ: 0
         };
 
         // UI Binding Setup
@@ -203,7 +215,10 @@
             { id: 'steer', key: 'steer', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
             { id: 'zoom', key: 'zoom', unit: 'm' },
-            { id: 'smoothing', key: 'smoothing', unit: '' }
+            { id: 'smoothing', key: 'smoothing', unit: '' },
+            { id: 'rotX', key: 'rotX', unit: '°' },
+            { id: 'rotY', key: 'rotY', unit: '°' },
+            { id: 'rotZ', key: 'rotZ', unit: '°' }
         ];
 
         bindings.forEach(b => {
@@ -216,93 +231,184 @@
                     camera.fov = physics.fov;
                     camera.updateProjectionMatrix();
                 }
+                if(b.key.startsWith('rot')) {
+                    updateCarRotation();
+                }
             });
         });
 
-        // Scene Setup
+        function updateCarRotation() {
+            carModelGroup.rotation.x = THREE.MathUtils.degToRad(physics.rotX);
+            carModelGroup.rotation.y = THREE.MathUtils.degToRad(physics.rotY);
+            carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
+        }
+
+        // High Graphics Renderer Setup
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0b0f19);
-        scene.fog = new THREE.FogExp2(0x0b0f19, 0.012);
+        scene.background = new THREE.Color(0x030407);
+        scene.fog = new THREE.FogExp2(0x030407, 0.01);
 
         const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        // High-End Lighting
+        const ambientLight = new THREE.AmbientLight(0x0f172a, 1.5);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0x3b82f6, 1.8);
-        dirLight.position.set(0, 60, -40);
+        const dirLight = new THREE.DirectionalLight(0x60a5fa, 3.5);
+        dirLight.position.set(20, 80, -30);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 250;
+        const d = 50;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.bias = -0.0005;
         scene.add(dirLight);
 
-        // Grid & Road Setup
-        const gridHelper = new THREE.GridHelper(1000, 100, 0x3b82f6, 0x1e293b);
-        gridHelper.position.y = -0.01;
-        scene.add(gridHelper);
+        const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x1e1b4b, 1.2);
+        scene.add(hemiLight);
 
-        const roadWidth = 16;
+        // Highway Environment Creation
+        const roadWidth = 20;
         const roadGeo = new THREE.PlaneGeometry(roadWidth, 1000);
-        const roadMat = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.8 });
+        const roadMat = new THREE.MeshStandardMaterial({ 
+            color: 0x111318, 
+            roughness: 0.4, 
+            metalness: 0.1 
+        });
         const road = new THREE.Mesh(roadGeo, roadMat);
         road.rotation.x = -Math.PI / 2;
+        road.receiveShadow = true;
         scene.add(road);
 
-        const lineGeo = new THREE.PlaneGeometry(0.4, 1000);
+        // Glowing Neon Center Lanes
+        const lineGeo = new THREE.PlaneGeometry(0.3, 1000);
         const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
         const centerLine = new THREE.Mesh(lineGeo, lineMat);
         centerLine.rotation.x = -Math.PI / 2;
-        centerLine.position.y = 0.01;
+        centerLine.position.y = 0.02;
         scene.add(centerLine);
 
-        // Streetlights along highway
-        const poleGeo = new THREE.BoxGeometry(0.3, 8, 0.3);
-        const armGeo = new THREE.BoxGeometry(2, 0.3, 0.3);
-        const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-        const streetlightGroup = new THREE.Group();
-        const spacing = 40;
+        // Side barriers & glowing grid floor
+        const gridHelper = new THREE.GridHelper(1000, 100, 0x1d4ed8, 0x0f172a);
+        gridHelper.position.y = -0.01;
+        scene.add(gridHelper);
 
-        for (let i = -25; i < 25; i++) {
-            const leftPole = new THREE.Mesh(poleGeo, lampMat);
-            leftPole.position.set(-roadWidth / 2 - 1, 4, i * spacing);
-            streetlightGroup.add(leftPole);
-            const rightPole = new THREE.Mesh(poleGeo, lampMat);
-            rightPole.position.set(roadWidth / 2 + 1, 4, i * spacing);
-            streetlightGroup.add(rightPole);
+        // Realistic Streetlights with PointLights for Bloom/Glow atmosphere
+        const poleGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 8);
+        const armGeo = new THREE.BoxGeometry(2.5, 0.2, 0.2);
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
+        
+        const streetlightGroup = new THREE.Group();
+        const spacing = 45;
+
+        for (let i = -30; i < 30; i++) {
+            [-1, 1].forEach(side => {
+                const xPos = side * (roadWidth / 2 + 1.5);
+                
+                const pole = new THREE.Mesh(poleGeo, lampMat);
+                pole.position.set(xPos, 5, i * spacing);
+                pole.castShadow = true;
+                streetlightGroup.add(pole);
+
+                const arm = new THREE.Mesh(armGeo, lampMat);
+                arm.position.set(xPos - (side * 1.25), 9.9, i * spacing);
+                streetlightGroup.add(arm);
+
+                // Add point lights every few poles for incredible high-graphics mood lighting
+                if (i % 2 === 0) {
+                    const bulbLight = new THREE.PointLight(0x38bdf8, 2, 25);
+                    bulbLight.position.set(xPos - (side * 1.25), 9.4, i * spacing);
+                    streetlightGroup.add(bulbLight);
+                }
+            });
         }
         scene.add(streetlightGroup);
 
-        // Default Vehicle Fallback Mesh
-        let carContainer = new THREE.Group();
-        const carGeo = new THREE.BoxGeometry(2, 1, 4);
-        const carMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.6, roughness: 0.2 });
-        const defaultCarMesh = new THREE.Mesh(carGeo, carMat);
-        defaultCarMesh.position.y = 0.5;
-        carContainer.add(defaultCarMesh);
+        // Vehicle Container & Default Placeholder Car
+        const carContainer = new THREE.Group();
+        carContainer.position.set(0, 0.5, 0);
         scene.add(carContainer);
 
-        // File Uploader handling for .glb / .gltf
+        const carModelGroup = new THREE.Group();
+        carContainer.add(carModelGroup);
+
+        // Default sleek car model if none uploaded
+        const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.2);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.15 });
+        const carBody = new THREE.Mesh(bodyGeo, bodyMat);
+        carBody.position.y = 0.4;
+        carBody.castShadow = true;
+        carModelGroup.add(carBody);
+
+        const roofGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.9, roughness: 0.1 });
+        const carRoof = new THREE.Mesh(roofGeo, roofMat);
+        carRoof.position.set(0, 1.1, -0.2);
+        carRoof.castShadow = true;
+        carModelGroup.add(carRoof);
+
+        updateCarRotation();
+
+        // Universal 3D Model Uploader (.glb, .gltf, .fbx)
         const fileInput = document.getElementById('modelUpload');
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+
             reader.readAsArrayBuffer(file);
             reader.onload = function (event) {
                 const contents = event.target.result;
-                const loader = new THREE.GLTFLoader();
-                loader.parse(contents, '', (gltf) => {
-                    scene.remove(carContainer);
-                    carContainer = gltf.scene;
-                    carContainer.scale.set(1.5, 1.5, 1.5);
-                    scene.add(carContainer);
-                }, (error) => {
-                    alert('Error loading 3D model. Ensure it is a valid .glb file.');
-                    console.error(error);
-                });
+
+                if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+                    const loader = new THREE.GLTFLoader();
+                    loader.parse(contents, '', (gltf) => {
+                        carModelGroup.clear();
+                        const loadedMesh = gltf.scene;
+                        loadedMesh.traverse(child => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                        carModelGroup.add(loadedMesh);
+                        updateCarRotation();
+                    }, (err) => { console.error(err); alert('Failed to parse GLB/GLTF model.'); });
+                } 
+                else if (fileName.endsWith('.fbx')) {
+                    try {
+                        const loader = new THREE.FBXLoader();
+                        const decodedData = loader.parse(contents, '');
+                        carModelGroup.clear();
+                        decodedData.traverse(child => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+                            }
+                        });
+                        carModelGroup.add(decodedData);
+                        updateCarRotation();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Failed to parse FBX model. Ensure it is a valid binary FBX.');
+                    }
+                }
             };
         });
 
@@ -322,15 +428,11 @@
         });
 
         let currentSpeed = 0;
-        let camTargetX = 0;
-        let camTargetY = 4;
-        let camTargetZ = 10;
 
         // Animation / Physics Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Dynamic Acceleration affected by Weight inertia scaling
             const effectiveAccel = physics.accel * (1000 / physics.weight);
             const effectiveBrake = physics.brake * (1000 / physics.weight);
 
@@ -344,30 +446,31 @@
             if (keys.a && Math.abs(currentSpeed) > 0.05) carContainer.position.x -= physics.steer;
             if (keys.d && Math.abs(currentSpeed) > 0.05) carContainer.position.x += physics.steer;
 
-            carContainer.position.x = Math.max(-roadWidth / 2 + 1.2, Math.min(roadWidth / 2 - 1.2, carContainer.position.x));
+            carContainer.position.x = Math.max(-roadWidth / 2 + 1.5, Math.min(roadWidth / 2 - 1.5, carContainer.position.x));
             carContainer.position.z -= currentSpeed;
 
-            // Loop environment chunks
+            // Endless Environment Loop
             if (carContainer.position.z < -spacing) carContainer.position.z += spacing;
             if (carContainer.position.z > spacing) carContainer.position.z -= spacing;
 
-            road.position.z = carContainer.position.z - 200;
+            road.position.z = carContainer.position.z - 250;
             centerLine.position.z = road.position.z;
             gridHelper.position.z = Math.floor(carContainer.position.z / 50) * 50;
+            dirLight.position.z = carContainer.position.z - 30;
 
-            // Camera Smoothing and Zoom calculations
-            const targetCamX = carContainer.position.x * 0.4;
-            const targetCamY = carContainer.position.y + (physics.zoom * 0.4);
+            // Cinematic Camera Follow & Smoothing
+            const targetCamX = carContainer.position.x * 0.45;
+            const targetCamY = carContainer.position.y + (physics.zoom * 0.35);
             const targetCamZ = carContainer.position.z + physics.zoom;
 
             camera.position.x += (targetCamX - camera.position.x) * physics.smoothing;
             camera.position.y += (targetCamY - camera.position.y) * physics.smoothing;
             camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
 
-            camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z - 10);
+            camera.lookAt(carContainer.position.x, carContainer.position.y + 0.8, carContainer.position.z - 12);
 
-            // Update HUD
-            document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 80)} MPH`;
+            // Update HUD Speed Display
+            document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 85)} MPH`;
 
             renderer.render(scene, camera);
         }
