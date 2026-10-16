@@ -33,7 +33,7 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 340px;
+            width: 350px;
             background: var(--panel);
             backdrop-filter: blur(16px);
             border: 1px solid var(--border);
@@ -144,61 +144,65 @@
         <h2>PHYSICS STUDIO</h2>
         <div class="control-group">
             <label>Weight (Mass): <span id="val-weight">1000</span> kg</label>
-            <input type="range" id="weight" min="200" max="3000" step="50" value="1000">
+            <input type="range" id="weight" min="200" max="4000" step="50" value="1000">
         </div>
         <div class="control-group">
             <label>Forward Accel: <span id="val-accel">0.02</span></label>
-            <input type="range" id="accel" min="0.005" max="0.1" step="0.005" value="0.02">
+            <input type="range" id="accel" min="0.005" max="1000.1" step="0.005" value="0.02">
         </div>
         <div class="control-group">
             <label>Braking Decel: <span id="val-brake">0.015</span></label>
-            <input type="range" id="brake" min="0.005" max="0.05" step="0.005" value="0.015">
+            <input type="range" id="brake" min="0.005" max="1000.05" step="0.005" value="0.015">
         </div>
         <div class="control-group">
             <label>Top Speed: <span id="val-topSpeed">1.5</span></label>
-            <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
+            <input type="range" id="topSpeed" min="0.5" max="1003.0" step="0.1" value="1.5">
         </div>
         <div class="control-group">
             <label>Turn Speed Factor: <span id="val-turnSpeedFactor">0.004</span></label>
-            <input type="range" id="turnSpeedFactor" min="0.0001" max="0.02" step="0.0005" value="0.004">
+            <input type="range" id="turnSpeedFactor" min="0.0001" max="1000.02" step="0.0005" value="0.004">
         </div>
 
         <h2>VEHICLE VISUALS & SCALE</h2>
         <div class="control-group">
             <label>Car Size (Scale): <span id="val-carScale">1.0</span>x</label>
-            <input type="range" id="carScale" min="0.2" max="3.0" step="0.1" value="1.0">
+            <input type="range" id="carScale" min="0.2" max="1003.0" step="0.1" value="1.0">
         </div>
         <div class="control-group">
-            <label>Shininess (Metal/Rough): <span id="val-shininess">0.95</span></label>
-            <input type="range" id="shininess" min="0.0" max="1.0" step="0.05" value="0.95">
+            <label>Shininess (Metal/Rough): <span id="val-shininess">1.0</span></label>
+            <input type="range" id="shininess" min="0.0" max="1001.0" step="0.05" value="1.0">
         </div>
 
         <h2>CAMERA STUDIO</h2>
         <div class="control-group">
             <label>Field of View (FOV): <span id="val-fov">65</span>°</label>
-            <input type="range" id="fov" min="30" max="120" step="1" value="65">
+            <input type="range" id="fov" min="30" max="1120" step="1" value="65">
         </div>
         <div class="control-group">
-            <label>Camera Zoom (Dist): <span id="val-zoom">9</span>m</label>
-            <input type="range" id="zoom" min="3" max="30" step="1" value="9">
+            <label>Base Camera Zoom: <span id="val-zoom">9</span>m</label>
+            <input type="range" id="zoom" min="3" max="1030" step="1" value="9">
+        </div>
+        <div class="control-group">
+            <label>Speed Zoom Factor: <span id="val-speedZoomFactor">2.0</span></label>
+            <input type="range" id="speedZoomFactor" min="0.0" max="1010.0" step="0.1" value="2.0">
         </div>
         <div class="control-group">
             <label>Camera Smoothing: <span id="val-smoothing">0.12</span></label>
-            <input type="range" id="smoothing" min="0.01" max="0.5" step="0.01" value="0.12">
+            <input type="range" id="smoothing" min="0.01" max="1000.5" step="0.01" value="0.12">
         </div>
 
         <h2>MODEL ORIENTATION FIXER</h2>
         <div class="control-group">
             <label>Model Rotation X: <span id="val-rotX">0</span>°</label>
-            <input type="range" id="rotX" min="-180" max="180" step="1" value="0">
+            <input type="range" id="rotX" min="-180" max="1180" step="1" value="0">
         </div>
         <div class="control-group">
             <label>Model Rotation Y: <span id="val-rotY">180</span>°</label>
-            <input type="range" id="rotY" min="-180" max="180" step="1" value="180">
+            <input type="range" id="rotY" min="-180" max="1180" step="1" value="180">
         </div>
         <div class="control-group">
             <label>Model Rotation Z: <span id="val-rotZ">0</span>°</label>
-            <input type="range" id="rotZ" min="-180" max="180" step="1" value="0">
+            <input type="range" id="rotZ" min="-180" max="1180" step="1" value="0">
         </div>
 
         <div class="json-section">
@@ -236,9 +240,10 @@
             topSpeed: 1.5,
             turnSpeedFactor: 0.004,
             carScale: 1.0,
-            shininess: 0.95,
+            shininess: 1.0,
             fov: 65,
             zoom: 9,
+            speedZoomFactor: 2.0,
             smoothing: 0.12,
             rotX: 0,
             rotY: 180,
@@ -255,6 +260,7 @@
             { id: 'shininess', key: 'shininess', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
             { id: 'zoom', key: 'zoom', unit: 'm' },
+            { id: 'speedZoomFactor', key: 'speedZoomFactor', unit: '' },
             { id: 'smoothing', key: 'smoothing', unit: '' },
             { id: 'rotX', key: 'rotX', unit: '°' },
             { id: 'rotY', key: 'rotY', unit: '°' },
@@ -304,27 +310,23 @@
             carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
         }
 
-        const superShinyMat = new THREE.MeshStandardMaterial({ 
+        // Maximum ultra-mirror reflection chrome material setup
+        const mirrorMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x2563eb, 
             metalness: 1.0, 
-            roughness: 0.02,
-            envMapIntensity: 2.0
+            roughness: 0.0,
+            envMapIntensity: 3.0
         });
-        const roofShinyMat = new THREE.MeshStandardMaterial({ 
+        const roofMirrorMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x0f172a, 
-            metalness: 0.9, 
-            roughness: 0.05 
+            metalness: 1.0, 
+            roughness: 0.0 
         });
 
         function updateCarMaterials() {
-            const m = 1.0;
-            const r = Math.max(0.01, 1.0 - physics.shininess);
-            superShinyMat.metalness = m;
-            superShinyMat.roughness = r;
-            roofShinyMat.roughness = Math.min(1.0, r + 0.05);
-
-            // If user uploaded a custom model, don't overwrite their materials unless they want us to, 
-            // but keep placeholder car clean and bright.
+            const r = Math.max(0.0, 1.0 - (physics.shininess / Math.max(1, physics.shininess))); 
+            mirrorMaterial.roughness = r;
+            roofMirrorMaterial.roughness = r;
         }
 
         function updateJsonBox() {
@@ -351,7 +353,7 @@
             }
         });
 
-        // Scene Setup
+        // Scene & Cube Camera Setup for real-time reflections
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0xffffff);
@@ -365,13 +367,21 @@
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.3;
+        renderer.toneMappingExposure = 1.4;
         container.appendChild(renderer.domElement);
+
+        // Environment Map / Reflection Probe Generation via CubeRenderTarget
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter });
+        const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
+        scene.add(cubeCamera);
+
+        mirrorMaterial.envMap = cubeRenderTarget.texture;
+        roofMirrorMaterial.envMap = cubeRenderTarget.texture;
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
         dirLight.position.set(40, 100, 50);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
@@ -385,7 +395,7 @@
 
         // Ground Plane & Grid
         const planeGeo = new THREE.PlaneGeometry(2000, 2000);
-        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.8 });
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
         const plane = new THREE.Mesh(planeGeo, planeMat);
         plane.rotation.x = -Math.PI / 2;
         plane.receiveShadow = true;
@@ -404,20 +414,20 @@
         carContainer.add(carModelGroup);
 
         const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.2);
-        const carBody = new THREE.Mesh(bodyGeo, superShinyMat);
+        const carBody = new THREE.Mesh(bodyGeo, mirrorMaterial);
         carBody.position.y = 0.4;
         carBody.castShadow = true;
         carModelGroup.add(carBody);
 
         const roofGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
-        const carRoof = new THREE.Mesh(roofGeo, roofShinyMat);
+        const carRoof = new THREE.Mesh(roofGeo, roofMirrorMaterial);
         carRoof.position.set(0, 1.1, -0.2);
         carRoof.castShadow = true;
         carModelGroup.add(carRoof);
 
         updateUIFromState();
 
-        // Model Uploader with Material Color Preservation Check
+        // Model Uploader
         const fileInput = document.getElementById('modelUpload');
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -437,10 +447,11 @@
                             if (child.isMesh) {
                                 child.castShadow = true;
                                 child.receiveShadow = true;
-                                // Preserve original custom textures/colors if present, but boost shine
                                 if (child.material) {
-                                    child.material.metalness = Math.max(child.material.metalness || 0, 0.8);
-                                    child.material.roughness = Math.min(child.material.roughness || 1, 0.15);
+                                    child.material.metalness = 1.0;
+                                    child.material.roughness = 0.0;
+                                    child.material.envMap = cubeRenderTarget.texture;
+                                    child.material.envMapIntensity = 3.0;
                                     child.material.needsUpdate = true;
                                 }
                             }
@@ -459,8 +470,10 @@
                                 child.castShadow = true;
                                 child.receiveShadow = true;
                                 if (child.material) {
-                                    child.material.metalness = Math.max(child.material.metalness || 0, 0.8);
-                                    child.material.roughness = Math.min(child.material.roughness || 1, 0.15);
+                                    child.material.metalness = 1.0;
+                                    child.material.roughness = 0.0;
+                                    child.material.envMap = cubeRenderTarget.texture;
+                                    child.material.envMapIntensity = 3.0;
                                     child.material.needsUpdate = true;
                                 }
                             }
@@ -493,7 +506,7 @@
         let currentSpeed = 0;
         let carAngle = 0;
 
-        // Physics & Animation Loop (Realistic Concorde / Vehicle turning scaled proportionally to speed)
+        // Physics & Animation Loop
         function animate() {
             requestAnimationFrame(animate);
 
@@ -507,8 +520,8 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            // Realistic turning rate: scales directly with speed so you don't snap 90 degrees at mach speeds
-            if (Math.abs(currentSpeed) > 0.005) {
+            // Turn speed = car speed * turn speed factor
+            if (Math.abs(currentSpeed) > 0.001) {
                 const dynamicTurnRate = currentSpeed * physics.turnSpeedFactor;
                 const turnMultiplier = currentSpeed > 0 ? 1 : -1;
                 if (keys.a) carAngle += dynamicTurnRate * turnMultiplier;
@@ -520,16 +533,24 @@
             carContainer.position.x += Math.sin(carAngle) * currentSpeed;
             carContainer.position.z += Math.cos(carAngle) * currentSpeed;
 
-            // Camera Follow
-            const targetCamX = carContainer.position.x - Math.sin(carAngle) * physics.zoom;
-            const targetCamY = carContainer.position.y + (physics.zoom * 0.4);
-            const targetCamZ = carContainer.position.z - Math.cos(carAngle) * physics.zoom;
+            // Separate speed zoom factor calculation that doesn't mess with smooth turning lag
+            const currentZoomDistance = physics.zoom + (Math.abs(currentSpeed) * physics.speedZoomFactor);
+
+            const targetCamX = carContainer.position.x - Math.sin(carAngle) * currentZoomDistance;
+            const targetCamY = carContainer.position.y + (currentZoomDistance * 0.38);
+            const targetCamZ = carContainer.position.z - Math.cos(carAngle) * currentZoomDistance;
 
             camera.position.x += (targetCamX - camera.position.x) * physics.smoothing;
             camera.position.y += (targetCamY - camera.position.y) * physics.smoothing;
             camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
 
             camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
+
+            // Update realtime reflections for mirror shine
+            carModelGroup.visible = false;
+            cubeCamera.position.copy(carContainer.position);
+            cubeCamera.update(renderer, scene);
+            carModelGroup.visible = true;
 
             document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 85)} MPH`;
 
