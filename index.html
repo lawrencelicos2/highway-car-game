@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>White/Black Checkered Physics Test Studio & JSON Config</title>
+    <title>Highway & Checkered Sandbox Physics Studio</title>
     <style>
         :root {
             --bg: #1e293b;
@@ -69,6 +69,17 @@
         input[type="range"] {
             width: 100%;
             accent-color: var(--accent);
+            cursor: pointer;
+        }
+        select {
+            width: 100%;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: bold;
+            font-size: 11px;
             cursor: pointer;
         }
         .json-section {
@@ -141,6 +152,15 @@
     <div id="canvas-container"></div>
 
     <div id="ui-panel">
+        <h2>ENVIRONMENT MODE</h2>
+        <div class="control-group">
+            <label>Map Layout:</label>
+            <select id="mapMode">
+                <option value="checkerboard">Checkerboard Sandbox</option>
+                <option value="highway">Endless Looping Highway (No Teleport)</option>
+            </select>
+        </div>
+
         <h2>PHYSICS STUDIO</h2>
         <div class="control-group">
             <label>Weight (Mass): <span id="val-weight">1000</span> kg</label>
@@ -165,6 +185,10 @@
         <div class="control-group">
             <label>Turn Speed Limit (Cap): <span id="val-turnSpeedLimit">0.05</span></label>
             <input type="range" id="turnSpeedLimit" min="0.001" max="501.0" step="0.005" value="0.05">
+        </div>
+        <div class="control-group">
+            <label>Steering Smoothness (Wheel Lag): <span id="val-steerSmoothing">0.15</span></label>
+            <input type="range" id="steerSmoothing" min="0.01" max="1.0" step="0.01" value="0.15">
         </div>
 
         <h2>VEHICLE VISUALS & SCALE</h2>
@@ -238,12 +262,14 @@
     <script>
         // Default Configuration State
         const defaultPhysics = {
+            mapMode: "checkerboard",
             weight: 1000,
             accel: 0.02,
             brake: 0.015,
             topSpeed: 1.5,
             turnSpeedFactor: 0.004,
             turnSpeedLimit: 0.05,
+            steerSmoothing: 0.15,
             carScale: 1.0,
             shininess: 1.0,
             fov: 65,
@@ -264,6 +290,7 @@
             { id: 'topSpeed', key: 'topSpeed', unit: '' },
             { id: 'turnSpeedFactor', key: 'turnSpeedFactor', unit: '' },
             { id: 'turnSpeedLimit', key: 'turnSpeedLimit', unit: '' },
+            { id: 'steerSmoothing', key: 'steerSmoothing', unit: '' },
             { id: 'carScale', key: 'carScale', unit: 'x' },
             { id: 'shininess', key: 'shininess', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
@@ -284,8 +311,10 @@
                     span.textContent = physics[b.key] + b.unit;
                 }
             });
+            document.getElementById('mapMode').value = physics.mapMode;
             camera.fov = physics.fov;
             camera.updateProjectionMatrix();
+            updateEnvironmentMode();
             updateCarTransform();
             updateCarMaterials();
             updateJsonBox();
@@ -311,11 +340,22 @@
             });
         });
 
+        document.getElementById('mapMode').addEventListener('change', (e) => {
+            physics.mapMode = e.target.value;
+            updateEnvironmentMode();
+            updateJsonBox();
+        });
+
         function updateCarTransform() {
             carModelGroup.rotation.x = THREE.MathUtils.degToRad(physics.rotX);
             carModelGroup.rotation.y = THREE.MathUtils.degToRad(physics.rotY);
             carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
             carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
+
+            // Apply scale to AI models as well
+            aiCars.forEach(ai => {
+                ai.group.scale.set(physics.carScale, physics.carScale, physics.carScale);
+            });
         }
 
         const mirrorMaterial = new THREE.MeshStandardMaterial({ 
@@ -350,7 +390,6 @@
         document.getElementById('loadJson').addEventListener('click', () => {
             try {
                 const parsed = JSON.parse(document.getElementById('jsonBox').value);
-                // Merge with defaults: if any setting is missing from JSON, default it and add it
                 physics = { ...defaultPhysics };
                 Object.keys(parsed).forEach(k => {
                     if (physics.hasOwnProperty(k)) {
@@ -368,9 +407,9 @@
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x1e293b);
-        scene.fog = new THREE.FogExp2(0x1e293b, 0.005);
+        scene.fog = new THREE.FogExp2(0x1e293b, 0.003);
 
-        const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 10000);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -382,7 +421,7 @@
         container.appendChild(renderer.domElement);
 
         const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter });
-        const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
+        const cubeCamera = new THREE.CubeCamera(0.1, 10000, cubeRenderTarget);
         scene.add(cubeCamera);
 
         mirrorMaterial.envMap = cubeRenderTarget.texture;
@@ -396,19 +435,26 @@
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
-        const d = 100;
+        const d = 150;
         dirLight.shadow.camera.left = -d;
         dirLight.shadow.camera.right = d;
         dirLight.shadow.camera.top = d;
         dirLight.shadow.camera.bottom = -d;
         scene.add(dirLight);
 
-        // Procedural Big Black & White Checkered Ground Plane Texture
+        // Environment Groups
+        const checkerGroup = new THREE.Group();
+        const highwayGroup = new THREE.Group();
+        scene.add(checkerGroup);
+        scene.add(highwayGroup);
+        highwayGroup.visible = false;
+
+        // 1. Checkerboard Setup
         const canvas = document.createElement('canvas');
         canvas.width = 512;
         canvas.height = 512;
         const ctx = canvas.getContext('2d');
-        const squares = 8; // Big squares
+        const squares = 8;
         const size = canvas.width / squares;
         for (let x = 0; x < squares; x++) {
             for (let y = 0; y < squares; y++) {
@@ -419,16 +465,64 @@
         const checkerTexture = new THREE.CanvasTexture(canvas);
         checkerTexture.wrapS = THREE.RepeatWrapping;
         checkerTexture.wrapT = THREE.RepeatWrapping;
-        checkerTexture.repeat.set(40, 40); // Spans across the massive floor
+        checkerTexture.repeat.set(80, 80);
 
-        const planeGeo = new THREE.PlaneGeometry(3000, 3000);
+        const planeGeo = new THREE.PlaneGeometry(8000, 8000);
         const planeMat = new THREE.MeshStandardMaterial({ map: checkerTexture, roughness: 0.4 });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-        plane.rotation.x = -Math.PI / 2;
-        plane.receiveShadow = true;
-        scene.add(plane);
+        const checkerPlane = new THREE.Mesh(planeGeo, planeMat);
+        checkerPlane.rotation.x = -Math.PI / 2;
+        checkerPlane.receiveShadow = true;
+        checkerGroup.add(checkerPlane);
 
-        // Vehicle Setup
+        // 2. Endless Looping Highway Setup (Modular Sections for Infinite Smoothness without Teleporting)
+        const roadWidth = 24;
+        const highwayLength = 10000; // Extremely long continuous road
+        const roadGeo = new THREE.PlaneGeometry(roadWidth, highwayLength);
+        const roadMat = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.5 });
+        const highwayRoad = new THREE.Mesh(roadGeo, roadMat);
+        highwayRoad.rotation.x = -Math.PI / 2;
+        highwayRoad.receiveShadow = true;
+        highwayGroup.add(highwayRoad);
+
+        // Center dashed lines
+        const lineGeo = new THREE.PlaneGeometry(0.4, highwayLength);
+        const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+        const highwayLine = new THREE.Mesh(lineGeo, lineMat);
+        highwayLine.rotation.x = -Math.PI / 2;
+        highwayLine.position.y = 0.02;
+        highwayGroup.add(highwayLine);
+
+        // Streetlights along highway
+        const poleGeo = new THREE.CylinderGeometry(0.3, 0.3, 10, 8);
+        const armGeo = new THREE.BoxGeometry(3, 0.3, 0.3);
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
+        const spacing = 50;
+
+        for (let i = -100; i <= 100; i++) {
+            [-1, 1].forEach(side => {
+                const xPos = side * (roadWidth / 2 + 1.5);
+                const pole = new THREE.Mesh(poleGeo, lampMat);
+                pole.position.set(xPos, 5, i * spacing);
+                pole.castShadow = true;
+                highwayGroup.add(pole);
+
+                const arm = new THREE.Mesh(armGeo, lampMat);
+                arm.position.set(xPos - (side * 1.5), 9.9, i * spacing);
+                highwayGroup.add(arm);
+            });
+        }
+
+        function updateEnvironmentMode() {
+            if (physics.mapMode === 'checkerboard') {
+                checkerGroup.visible = true;
+                highwayGroup.visible = false;
+            } else {
+                checkerGroup.visible = false;
+                highwayGroup.visible = true;
+            }
+        }
+
+        // Vehicle Base & Master Model Setup
         const carContainer = new THREE.Group();
         carContainer.position.set(0, 0, 0);
         scene.add(carContainer);
@@ -448,6 +542,33 @@
         carRoof.castShadow = true;
         carModelGroup.add(carRoof);
 
+        // AI Traffic Cars Setup (Using exact duplicate of player car model)
+        const aiCars = [];
+        const numAiCars = 12;
+        for (let i = 0; i < numAiCars; i++) {
+            const aiGroup = new THREE.Group();
+            
+            // Duplicate model structure
+            const aiBody = new THREE.Mesh(bodyGeo, mirrorMaterial);
+            aiBody.position.y = 0.4;
+            aiBody.castShadow = true;
+            aiGroup.add(aiBody);
+
+            const aiRoof = new THREE.Mesh(roofGeo, roofMirrorMaterial);
+            aiRoof.position.set(0, 1.1, -0.2);
+            aiRoof.castShadow = true;
+            aiGroup.add(aiRoof);
+
+            scene.add(aiGroup);
+
+            aiCars.push({
+                group: aiGroup,
+                x: (Math.random() - 0.5) * (roadWidth - 4),
+                z: -i * 150 - Math.random() * 50,
+                speed: 0.6 + Math.random() * 0.4
+            });
+        }
+
         updateUIFromState();
 
         // Model Uploader
@@ -464,45 +585,14 @@
                 if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
                     const loader = new THREE.GLTFLoader();
                     loader.parse(contents, '', (gltf) => {
-                        carModelGroup.clear();
-                        const loadedMesh = gltf.scene;
-                        loadedMesh.traverse(child => {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                if (child.material) {
-                                    child.material.metalness = 1.0;
-                                    child.material.roughness = 0.0;
-                                    child.material.envMap = cubeRenderTarget.texture;
-                                    child.material.envMapIntensity = 3.0;
-                                    child.material.needsUpdate = true;
-                                }
-                            }
-                        });
-                        carModelGroup.add(loadedMesh);
-                        updateCarTransform();
+                        applyCustomModelToAll(gltf.scene);
                     }, (err) => { console.error(err); alert('Failed to parse GLB/GLTF.'); });
                 } 
                 else if (fileName.endsWith('.fbx')) {
                     try {
                         const loader = new THREE.FBXLoader();
                         const decodedData = loader.parse(contents, '');
-                        carModelGroup.clear();
-                        decodedData.traverse(child => {
-                            if (child.isMesh) {
-                                child.castShadow = true;
-                                child.receiveShadow = true;
-                                if (child.material) {
-                                    child.material.metalness = 1.0;
-                                    child.material.roughness = 0.0;
-                                    child.material.envMap = cubeRenderTarget.texture;
-                                    child.material.envMapIntensity = 3.0;
-                                    child.material.needsUpdate = true;
-                                }
-                            }
-                        });
-                        carModelGroup.add(decodedData);
-                        updateCarTransform();
+                        applyCustomModelToAll(decodedData);
                     } catch (err) {
                         console.error(err);
                         alert('Failed to parse FBX.');
@@ -510,6 +600,47 @@
                 }
             };
         });
+
+        function applyCustomModelToAll(sourceScene) {
+            carModelGroup.clear();
+            const loadedMesh = sourceScene.clone();
+            loadedMesh.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if (child.material) {
+                        child.material.metalness = 1.0;
+                        child.material.roughness = 0.0;
+                        child.material.envMap = cubeRenderTarget.texture;
+                        child.material.envMapIntensity = 3.0;
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
+            carModelGroup.add(loadedMesh);
+
+            // Apply to all AI traffic cars too
+            aiCars.forEach(ai => {
+                ai.group.clear();
+                const aiMesh = sourceScene.clone();
+                aiMesh.traverse(child => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        if (child.material) {
+                            child.material.metalness = 1.0;
+                            child.material.roughness = 0.0;
+                            child.material.envMap = cubeRenderTarget.texture;
+                            child.material.envMapIntensity = 3.0;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                });
+                ai.group.add(aiMesh);
+            });
+
+            updateCarTransform();
+        }
 
         // Controls State
         const keys = { w: false, s: false, a: false, d: false };
@@ -528,6 +659,7 @@
 
         let currentSpeed = 0;
         let carAngle = 0;
+        let currentSteerAngle = 0; // Steering wheel smoothing / easing state
 
         // Physics & Animation Loop
         function animate() {
@@ -543,13 +675,19 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            // Turn speed = car speed * turn speed factor, capped by turn speed limit
-            if (Math.abs(currentSpeed) > 0.001) {
+            // Target steering input calculation based on keys
+            let targetSteerInput = 0;
+            if (keys.a) targetSteerInput = 1;
+            if (keys.d) targetSteerInput = -1;
+
+            // Smoothly ease into steering angle like turning a real steering wheel
+            currentSteerAngle += (targetSteerInput - currentSteerAngle) * physics.steerSmoothing;
+
+            // Turn speed = car speed * turn speed factor, capped by limit
+            if (Math.abs(currentSpeed) > 0.001 && Math.abs(currentSteerAngle) > 0.01) {
                 let dynamicTurnRate = Math.abs(currentSpeed) * physics.turnSpeedFactor;
                 dynamicTurnRate = Math.min(dynamicTurnRate, physics.turnSpeedLimit);
-                const turnMultiplier = currentSpeed > 0 ? 1 : -1;
-                if (keys.a) carAngle += dynamicTurnRate * turnMultiplier;
-                if (keys.d) carAngle -= dynamicTurnRate * turnMultiplier;
+                carAngle += currentSteerAngle * dynamicTurnRate * (currentSpeed > 0 ? 1 : -1);
             }
 
             carContainer.rotation.y = carAngle;
@@ -557,7 +695,28 @@
             carContainer.position.x += Math.sin(carAngle) * currentSpeed;
             carContainer.position.z += Math.cos(carAngle) * currentSpeed;
 
-            // Camera follow with speed zoom
+            // Boundary constraints for highway mode
+            if (physics.mapMode === 'highway') {
+                carContainer.position.x = Math.max(-roadWidth / 2 + 1.5, Math.min(roadWidth / 2 - 1.5, carContainer.position.x));
+            }
+
+            // Update AI Traffic Cars
+            aiCars.forEach(ai => {
+                ai.z -= ai.speed * 0.4;
+                // Loop AI cars seamlessly far ahead / behind
+                if (ai.z > carContainer.position.z + 200) {
+                    ai.z = carContainer.position.z - 1500 - Math.random() * 500;
+                    ai.x = (Math.random() - 0.5) * (roadWidth - 4);
+                }
+                if (ai.z < carContainer.position.z - 2000) {
+                    ai.z = carContainer.position.z + 500 + Math.random() * 500;
+                    ai.x = (Math.random() - 0.5) * (roadWidth - 4);
+                }
+                ai.group.position.set(ai.x, 0, ai.z);
+                ai.group.rotation.y = 0; // facing straight down highway
+            });
+
+            // Camera follow with speed zoom (Zero Teleporting!)
             const currentZoomDistance = physics.zoom + (Math.abs(currentSpeed) * physics.speedZoomFactor);
 
             const targetCamX = carContainer.position.x - Math.sin(carAngle) * currentZoomDistance;
@@ -572,9 +731,13 @@
 
             // Update realtime reflections
             carModelGroup.visible = false;
+            aiCars.forEach(ai => ai.group.visible = false);
+            
             cubeCamera.position.copy(carContainer.position);
             cubeCamera.update(renderer, scene);
+            
             carModelGroup.visible = true;
+            aiCars.forEach(ai => ai.group.visible = true);
 
             document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 85)} MPH`;
 
