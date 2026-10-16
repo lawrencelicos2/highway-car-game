@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>High-Graphics Highway & Vehicle Studio</title>
+    <title>White Grid Physics Test Studio</title>
     <style>
         :root {
-            --bg: #030407;
-            --panel: rgba(10, 15, 30, 0.9);
-            --accent: #3b82f6;
-            --text: #e2e8f0;
-            --border: #1e293b;
+            --bg: #e2e8f0;
+            --panel: rgba(255, 255, 255, 0.9);
+            --accent: #2563eb;
+            --text: #1e293b;
+            --border: #cbd5e1;
         }
         body {
             margin: 0;
@@ -40,14 +40,14 @@
             border-radius: 12px;
             padding: 20px;
             z-index: 10;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             max-height: 92vh;
             overflow-y: auto;
         }
         h2 {
             margin: 0 0 12px 0;
             font-size: 15px;
-            color: #60a5fa;
+            color: #2563eb;
             letter-spacing: 0.5px;
             border-bottom: 1px solid var(--border);
             padding-bottom: 6px;
@@ -60,10 +60,10 @@
             justify-content: space-between;
             font-size: 11px;
             margin-bottom: 3px;
-            color: #94a3b8;
+            color: #64748b;
         }
         label span {
-            color: #fff;
+            color: #0f172a;
             font-weight: bold;
         }
         input[type="range"] {
@@ -79,9 +79,9 @@
         .upload-btn {
             display: block;
             width: 100%;
-            background: #1e3a8a;
-            color: #93c5fd;
-            border: 1px solid #3b82f6;
+            background: #2563eb;
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
             padding: 10px;
             border-radius: 6px;
             text-align: center;
@@ -92,8 +92,7 @@
             transition: background 0.2s;
         }
         .upload-btn:hover {
-            background: #2563eb;
-            color: #fff;
+            background: #1d4ed8;
         }
         input[type="file"] {
             display: none;
@@ -110,11 +109,12 @@
             font-family: monospace;
             pointer-events: none;
             backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
         #hud div {
             font-size: 14px;
             margin: 3px 0;
-            color: #60a5fa;
+            color: #2563eb;
         }
     </style>
 </head>
@@ -141,8 +141,8 @@
             <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
         </div>
         <div class="control-group">
-            <label>Steer Sensitivity: <span id="val-steer">0.3</span></label>
-            <input type="range" id="steer" min="0.05" max="1.0" step="0.05" value="0.3">
+            <label>Turn Rate (Steer): <span id="val-turnRate">0.03</span></label>
+            <input type="range" id="turnRate" min="0.005" max="0.08" step="0.005" value="0.03">
         </div>
 
         <h2>CAMERA STUDIO</h2>
@@ -181,7 +181,7 @@
 
     <div id="hud">
         <div id="hud-speed">SPEED: 0 MPH</div>
-        <div id="hud-controls">[W/S] Drive | [A/D] Steer</div>
+        <div id="hud-controls">[W/S] Drive | [A/D] Steer & Turn</div>
     </div>
 
     <!-- Three.js & Loaders CDN -->
@@ -197,7 +197,7 @@
             accel: 0.02,
             brake: 0.015,
             topSpeed: 1.5,
-            steer: 0.3,
+            turnRate: 0.03,
             fov: 65,
             zoom: 9,
             smoothing: 0.12,
@@ -212,7 +212,7 @@
             { id: 'accel', key: 'accel', unit: '' },
             { id: 'brake', key: 'brake', unit: '' },
             { id: 'topSpeed', key: 'topSpeed', unit: '' },
-            { id: 'steer', key: 'steer', unit: '' },
+            { id: 'turnRate', key: 'turnRate', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
             { id: 'zoom', key: 'zoom', unit: 'm' },
             { id: 'smoothing', key: 'smoothing', unit: '' },
@@ -243,11 +243,11 @@
             carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
         }
 
-        // High Graphics Renderer Setup
+        // Clean White & Grid Scene Setup
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x030407);
-        scene.fog = new THREE.FogExp2(0x030407, 0.01);
+        scene.background = new THREE.Color(0xffffff);
+        scene.fog = new THREE.FogExp2(0xffffff, 0.008);
 
         const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
         
@@ -256,107 +256,55 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
 
-        // High-End Lighting
-        const ambientLight = new THREE.AmbientLight(0x0f172a, 1.5);
+        // Bright Studio Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0x60a5fa, 3.5);
-        dirLight.position.set(20, 80, -30);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(30, 80, 50);
         dirLight.castShadow = true;
         dirLight.shadow.mapSize.width = 2048;
         dirLight.shadow.mapSize.height = 2048;
         dirLight.shadow.camera.near = 0.5;
         dirLight.shadow.camera.far = 250;
-        const d = 50;
+        const d = 100;
         dirLight.shadow.camera.left = -d;
         dirLight.shadow.camera.right = d;
         dirLight.shadow.camera.top = d;
         dirLight.shadow.camera.bottom = -d;
-        dirLight.shadow.bias = -0.0005;
         scene.add(dirLight);
 
-        const hemiLight = new THREE.HemisphereLight(0x38bdf8, 0x1e1b4b, 1.2);
-        scene.add(hemiLight);
+        // Infinite White Ground Plane with Grid
+        const planeGeo = new THREE.PlaneGeometry(2000, 2000);
+        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 1.0 });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+        plane.rotation.x = -Math.PI / 2;
+        plane.receiveShadow = true;
+        scene.add(plane);
 
-        // Highway Environment Creation
-        const roadWidth = 20;
-        const roadGeo = new THREE.PlaneGeometry(roadWidth, 1000);
-        const roadMat = new THREE.MeshStandardMaterial({ 
-            color: 0x111318, 
-            roughness: 0.4, 
-            metalness: 0.1 
-        });
-        const road = new THREE.Mesh(roadGeo, roadMat);
-        road.rotation.x = -Math.PI / 2;
-        road.receiveShadow = true;
-        scene.add(road);
-
-        // Glowing Neon Center Lanes
-        const lineGeo = new THREE.PlaneGeometry(0.3, 1000);
-        const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-        const centerLine = new THREE.Mesh(lineGeo, lineMat);
-        centerLine.rotation.x = -Math.PI / 2;
-        centerLine.position.y = 0.02;
-        scene.add(centerLine);
-
-        // Side barriers & glowing grid floor
-        const gridHelper = new THREE.GridHelper(1000, 100, 0x1d4ed8, 0x0f172a);
-        gridHelper.position.y = -0.01;
+        const gridHelper = new THREE.GridHelper(2000, 200, 0x94a3b8, 0xe2e8f0);
+        gridHelper.position.y = 0.01;
         scene.add(gridHelper);
-
-        // Realistic Streetlights with PointLights for Bloom/Glow atmosphere
-        const poleGeo = new THREE.CylinderGeometry(0.2, 0.2, 10, 8);
-        const armGeo = new THREE.BoxGeometry(2.5, 0.2, 0.2);
-        const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
-        
-        const streetlightGroup = new THREE.Group();
-        const spacing = 45;
-
-        for (let i = -30; i < 30; i++) {
-            [-1, 1].forEach(side => {
-                const xPos = side * (roadWidth / 2 + 1.5);
-                
-                const pole = new THREE.Mesh(poleGeo, lampMat);
-                pole.position.set(xPos, 5, i * spacing);
-                pole.castShadow = true;
-                streetlightGroup.add(pole);
-
-                const arm = new THREE.Mesh(armGeo, lampMat);
-                arm.position.set(xPos - (side * 1.25), 9.9, i * spacing);
-                streetlightGroup.add(arm);
-
-                // Add point lights every few poles for incredible high-graphics mood lighting
-                if (i % 2 === 0) {
-                    const bulbLight = new THREE.PointLight(0x38bdf8, 2, 25);
-                    bulbLight.position.set(xPos - (side * 1.25), 9.4, i * spacing);
-                    streetlightGroup.add(bulbLight);
-                }
-            });
-        }
-        scene.add(streetlightGroup);
 
         // Vehicle Container & Default Placeholder Car
         const carContainer = new THREE.Group();
-        carContainer.position.set(0, 0.5, 0);
+        carContainer.position.set(0, 0, 0);
         scene.add(carContainer);
 
         const carModelGroup = new THREE.Group();
         carContainer.add(carModelGroup);
 
-        // Default sleek car model if none uploaded
         const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.2);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.8, roughness: 0.15 });
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.3, roughness: 0.2 });
         const carBody = new THREE.Mesh(bodyGeo, bodyMat);
         carBody.position.y = 0.4;
         carBody.castShadow = true;
         carModelGroup.add(carBody);
 
         const roofGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.9, roughness: 0.1 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.5, roughness: 0.1 });
         const carRoof = new THREE.Mesh(roofGeo, roofMat);
         carRoof.position.set(0, 1.1, -0.2);
         carRoof.castShadow = true;
@@ -364,7 +312,7 @@
 
         updateCarRotation();
 
-        // Universal 3D Model Uploader (.glb, .gltf, .fbx)
+        // Model Uploader (.glb, .gltf, .fbx)
         const fileInput = document.getElementById('modelUpload');
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
@@ -428,8 +376,9 @@
         });
 
         let currentSpeed = 0;
+        let carAngle = 0;
 
-        // Animation / Physics Loop
+        // Animation / Real Turn Physics Loop
         function animate() {
             requestAnimationFrame(animate);
 
@@ -443,31 +392,29 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            if (keys.a && Math.abs(currentSpeed) > 0.05) carContainer.position.x -= physics.steer;
-            if (keys.d && Math.abs(currentSpeed) > 0.05) carContainer.position.x += physics.steer;
+            // Real steering rotation based on speed and turn rate
+            if (Math.abs(currentSpeed) > 0.02) {
+                const turnMultiplier = currentSpeed > 0 ? 1 : -1;
+                if (keys.a) carAngle += physics.turnRate * turnMultiplier;
+                if (keys.d) carAngle -= physics.turnRate * turnMultiplier;
+            }
 
-            carContainer.position.x = Math.max(-roadWidth / 2 + 1.5, Math.min(roadWidth / 2 - 1.5, carContainer.position.x));
-            carContainer.position.z -= currentSpeed;
+            carContainer.rotation.y = carAngle;
 
-            // Endless Environment Loop
-            if (carContainer.position.z < -spacing) carContainer.position.z += spacing;
-            if (carContainer.position.z > spacing) carContainer.position.z -= spacing;
+            // Move car forward in the direction it is facing
+            carContainer.position.x += Math.sin(carAngle) * currentSpeed;
+            carContainer.position.z += Math.cos(carAngle) * currentSpeed;
 
-            road.position.z = carContainer.position.z - 250;
-            centerLine.position.z = road.position.z;
-            gridHelper.position.z = Math.floor(carContainer.position.z / 50) * 50;
-            dirLight.position.z = carContainer.position.z - 30;
-
-            // Cinematic Camera Follow & Smoothing
-            const targetCamX = carContainer.position.x * 0.45;
-            const targetCamY = carContainer.position.y + (physics.zoom * 0.35);
-            const targetCamZ = carContainer.position.z + physics.zoom;
+            // Smooth 3D Camera Follow orbiting behind the car
+            const targetCamX = carContainer.position.x - Math.sin(carAngle) * physics.zoom;
+            const targetCamY = carContainer.position.y + (physics.zoom * 0.4);
+            const targetCamZ = carContainer.position.z - Math.cos(carAngle) * physics.zoom;
 
             camera.position.x += (targetCamX - camera.position.x) * physics.smoothing;
             camera.position.y += (targetCamY - camera.position.y) * physics.smoothing;
             camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
 
-            camera.lookAt(carContainer.position.x, carContainer.position.y + 0.8, carContainer.position.z - 12);
+            camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
 
             // Update HUD Speed Display
             document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 85)} MPH`;
