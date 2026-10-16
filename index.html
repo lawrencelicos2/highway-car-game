@@ -3,85 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Grid Highway Test</title>
+    <title>Highway Game & Physics Tweak Studio</title>
     <style>
+        :root {
+            --bg: #0b0f19;
+            --panel: rgba(15, 23, 42, 0.85);
+            --accent: #3b82f6;
+            --text: #e2e8f0;
+            --border: #334155;
+        }
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            background-color: #050508;
-            font-family: monospace;
-            color: #fff;
+            background-color: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text);
+            user-select: none;
         }
-        #info {
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui-panel {
             position: absolute;
             top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid #3b82f6;
-            padding: 15px;
-            border-radius: 8px;
-            pointer-events: none;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+            right: 20px;
+            width: 320px;
+            background: var(--panel);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 10;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        h1 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
             color: #60a5fa;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
         }
-        p {
-            margin: 4px 0;
-            font-size: 13px;
+        .control-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-bottom: 4px;
             color: #94a3b8;
+        }
+        label span {
+            color: #fff;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .upload-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+        .upload-btn {
+            display: block;
+            width: 100%;
+            background: #1e3a8a;
+            color: #93c5fd;
+            border: 1px solid #3b82f6;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover {
+            background: #2563eb;
+            color: #fff;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 10;
+            font-family: monospace;
+            pointer-events: none;
+        }
+        #hud div {
+            font-size: 14px;
+            margin: 3px 0;
+            color: #60a5fa;
         }
     </style>
 </head>
 <body>
 
-    <div id="info">
-        <h1>GRID HIGHWAY TEST</h1>
-        <p>[W / S] Accelerate / Brake</p>
-        <p>[A / D] Steer Left / Right</p>
-        <p>Status: Ready for Cloudflare Deploy</p>
+    <div id="canvas-container"></div>
+
+    <div id="ui-panel">
+        <h2>PHYSICS & CAMERA TUNER</h2>
+        
+        <div class="control-group">
+            <label>Weight (Mass): <span id="val-weight">1000</span> kg</label>
+            <input type="range" id="weight" min="200" max="3000" step="50" value="1000">
+        </div>
+
+        <div class="control-group">
+            <label>Forward Accel: <span id="val-accel">0.02</span></label>
+            <input type="range" id="accel" min="0.005" max="0.1" step="0.005" value="0.02">
+        </div>
+
+        <div class="control-group">
+            <label>Braking Decel: <span id="val-brake">0.015</span></label>
+            <input type="range" id="brake" min="0.005" max="0.05" step="0.005" value="0.015">
+        </div>
+
+        <div class="control-group">
+            <label>Top Speed: <span id="val-topSpeed">1.5</span></label>
+            <input type="range" id="topSpeed" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <label>Steer Sensitivity: <span id="val-steer">0.3</span></label>
+            <input type="range" id="steer" min="0.05" max="1.0" step="0.05" value="0.3">
+        </div>
+
+        <h2>CAMERA SETTINGS</h2>
+
+        <div class="control-group">
+            <label>Field of View (FOV): <span id="val-fov">60</span>°</label>
+            <input type="range" id="fov" min="30" max="120" step="1" value="60">
+        </div>
+
+        <div class="control-group">
+            <label>Camera Zoom (Dist): <span id="val-zoom">10</span>m</label>
+            <input type="range" id="zoom" min="3" max="30" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <label>Camera Smoothing: <span id="val-smoothing">0.1</span></label>
+            <input type="range" id="smoothing" min="0.01" max="0.5" step="0.01" value="0.1">
+        </div>
+
+        <div class="upload-section">
+            <label class="upload-btn" for="modelUpload">Upload Custom 3D Model (.glb / .gltf)</label>
+            <input type="file" id="modelUpload" accept=".glb,.gltf">
+        </div>
     </div>
 
-    <!-- Three.js CDN -->
+    <div id="hud">
+        <div id="hud-speed">SPEED: 0 MPH</div>
+        <div id="hud-controls">[W/S] Drive | [A/D] Steer</div>
+    </div>
+
+    <!-- Three.js and GLTFLoader Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-        // Setup Scene, Camera, Renderer
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x050508);
-        scene.fog = new THREE.FogExp2(0x050508, 0.015);
+        // Physics & Tuning Configuration State
+        const physics = {
+            weight: 1000,
+            accel: 0.02,
+            brake: 0.015,
+            topSpeed: 1.5,
+            steer: 0.3,
+            fov: 60,
+            zoom: 10,
+            smoothing: 0.1
+        };
 
-        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // UI Binding Setup
+        const bindings = [
+            { id: 'weight', key: 'weight', unit: ' kg' },
+            { id: 'accel', key: 'accel', unit: '' },
+            { id: 'brake', key: 'brake', unit: '' },
+            { id: 'topSpeed', key: 'topSpeed', unit: '' },
+            { id: 'steer', key: 'steer', unit: '' },
+            { id: 'fov', key: 'fov', unit: '°' },
+            { id: 'zoom', key: 'zoom', unit: 'm' },
+            { id: 'smoothing', key: 'smoothing', unit: '' }
+        ];
+
+        bindings.forEach(b => {
+            const input = document.getElementById(b.id);
+            const span = document.getElementById(`val-${b.id}`);
+            input.addEventListener('input', (e) => {
+                physics[b.key] = parseFloat(e.target.value);
+                span.textContent = physics[b.key] + b.unit;
+                if(b.key === 'fov') {
+                    camera.fov = physics.fov;
+                    camera.updateProjectionMatrix();
+                }
+            });
+        });
+
+        // Scene Setup
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0f19);
+        scene.fog = new THREE.FogExp2(0x0b0f19, 0.012);
+
+        const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
+        container.appendChild(renderer.domElement);
 
         // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0x3b82f6, 1.5);
-        dirLight.position.set(0, 50, -50);
+        const dirLight = new THREE.DirectionalLight(0x3b82f6, 1.8);
+        dirLight.position.set(0, 60, -40);
         scene.add(dirLight);
 
-        // Create Grid Landscape Floor
+        // Grid & Road Setup
         const gridHelper = new THREE.GridHelper(1000, 100, 0x3b82f6, 0x1e293b);
         gridHelper.position.y = -0.01;
         scene.add(gridHelper);
 
-        const planeGeo = new THREE.PlaneGeometry(1000, 1000);
-        const planeMat = new THREE.MeshStandardMaterial({ color: 0x090a10, roughness: 0.9 });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-        plane.rotation.x = -Math.PI / 2;
-        plane.position.y = -0.05;
-        scene.add(plane);
-
-        // Highway Road Mesh
         const roadWidth = 16;
         const roadGeo = new THREE.PlaneGeometry(roadWidth, 1000);
         const roadMat = new THREE.MeshStandardMaterial({ color: 0x111318, roughness: 0.8 });
@@ -89,7 +251,6 @@
         road.rotation.x = -Math.PI / 2;
         scene.add(road);
 
-        // Center Lanes (Dashed look via repeating lines or simple geometry)
         const lineGeo = new THREE.PlaneGeometry(0.4, 1000);
         const lineMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
         const centerLine = new THREE.Mesh(lineGeo, lineMat);
@@ -97,108 +258,122 @@
         centerLine.position.y = 0.01;
         scene.add(centerLine);
 
-        // Streetlights Generator along the highway
+        // Streetlights along highway
         const poleGeo = new THREE.BoxGeometry(0.3, 8, 0.3);
         const armGeo = new THREE.BoxGeometry(2, 0.3, 0.3);
         const lampMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
-
         const streetlightGroup = new THREE.Group();
         const spacing = 40;
-        const totalLamps = 50;
 
-        for (let i = -totalLamps / 2; i < totalLamps / 2; i++) {
-            // Left Side Pole
+        for (let i = -25; i < 25; i++) {
             const leftPole = new THREE.Mesh(poleGeo, lampMat);
             leftPole.position.set(-roadWidth / 2 - 1, 4, i * spacing);
-             streetlightGroup.add(leftPole);
-
-            const leftArm = new THREE.Mesh(armGeo, lampMat);
-            leftArm.position.set(-roadWidth / 2, 7.8, i * spacing);
-            streetlightGroup.add(leftArm);
-
-            // Right Side Pole
+            streetlightGroup.add(leftPole);
             const rightPole = new THREE.Mesh(poleGeo, lampMat);
             rightPole.position.set(roadWidth / 2 + 1, 4, i * spacing);
             streetlightGroup.add(rightPole);
-
-            const rightArm = new THREE.Mesh(armGeo, lampMat);
-            rightArm.position.set(roadWidth / 2, 7.8, i * spacing);
-            streetlightGroup.add(rightArm);
         }
         scene.add(streetlightGroup);
 
-        // Player / Chase Car
+        // Default Vehicle Fallback Mesh
+        let carContainer = new THREE.Group();
         const carGeo = new THREE.BoxGeometry(2, 1, 4);
-        const carMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.5, roughness: 0.2 });
-        const car = new THREE.Mesh(carGeo, carMat);
-        car.position.set(0, 0.5, 0);
-        scene.add(car);
+        const carMat = new THREE.MeshStandardMaterial({ color: 0xef4444, metalness: 0.6, roughness: 0.2 });
+        const defaultCarMesh = new THREE.Mesh(carGeo, carMat);
+        defaultCarMesh.position.y = 0.5;
+        carContainer.add(defaultCarMesh);
+        scene.add(carContainer);
+
+        // File Uploader handling for .glb / .gltf
+        const fileInput = document.getElementById('modelUpload');
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function (event) {
+                const contents = event.target.result;
+                const loader = new THREE.GLTFLoader();
+                loader.parse(contents, '', (gltf) => {
+                    scene.remove(carContainer);
+                    carContainer = gltf.scene;
+                    carContainer.scale.set(1.5, 1.5, 1.5);
+                    scene.add(carContainer);
+                }, (error) => {
+                    alert('Error loading 3D model. Ensure it is a valid .glb file.');
+                    console.error(error);
+                });
+            };
+        });
 
         // Controls State
         const keys = { w: false, s: false, a: false, d: false };
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'w' || e.key === 'W') keys.w = true;
-            if (e.key === 's' || e.key === 'S') keys.s = true;
-            if (e.key === 'a' || e.key === 'A') keys.a = true;
-            if (e.key === 'd' || e.key === 'D') keys.d = true;
+            if (['w','W'].includes(e.key)) keys.w = true;
+            if (['s','S'].includes(e.key)) keys.s = true;
+            if (['a','A'].includes(e.key)) keys.a = true;
+            if (['d','D'].includes(e.key)) keys.d = true;
         });
         window.addEventListener('keyup', (e) => {
-            if (e.key === 'w' || e.key === 'W') keys.w = false;
-            if (e.key === 's' || e.key === 'S') keys.s = false;
-            if (e.key === 'a' || e.key === 'A') keys.a = false;
-            if (e.key === 'd' || e.key === 'D') keys.d = false;
+            if (['w','W'].includes(e.key)) keys.w = false;
+            if (['s','S'].includes(e.key)) keys.s = false;
+            if (['a','A'].includes(e.key)) keys.a = false;
+            if (['d','D'].includes(e.key)) keys.d = false;
         });
 
-        let speed = 0;
-        const maxSpeed = 1.2;
-        const acceleration = 0.02;
-        const deceleration = 0.015;
+        let currentSpeed = 0;
+        let camTargetX = 0;
+        let camTargetY = 4;
+        let camTargetZ = 10;
 
-        // Animation Loop
+        // Animation / Physics Loop
         function animate() {
             requestAnimationFrame(animate);
 
-            // Car Physics & Movement
-            if (keys.w) speed = Math.min(speed + acceleration, maxSpeed);
-            else if (keys.s) speed = Math.max(speed - acceleration, -maxSpeed / 2);
+            // Dynamic Acceleration affected by Weight inertia scaling
+            const effectiveAccel = physics.accel * (1000 / physics.weight);
+            const effectiveBrake = physics.brake * (1000 / physics.weight);
+
+            if (keys.w) currentSpeed = Math.min(currentSpeed + effectiveAccel, physics.topSpeed);
+            else if (keys.s) currentSpeed = Math.max(currentSpeed - effectiveBrake, -physics.topSpeed / 2);
             else {
-                if (speed > 0) speed = Math.max(0, speed - deceleration);
-                if (speed < 0) speed = Math.min(0, speed + deceleration);
+                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - effectiveBrake);
+                if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            if (keys.a && Math.abs(speed) > 0.1) car.position.x -= 0.3;
-            if (keys.d && Math.abs(speed) > 0.1) car.position.x += 0.3;
+            if (keys.a && Math.abs(currentSpeed) > 0.05) carContainer.position.x -= physics.steer;
+            if (keys.d && Math.abs(currentSpeed) > 0.05) carContainer.position.x += physics.steer;
 
-            // Constrain car to road width
-            car.position.x = Math.max(-roadWidth / 2 + 1.5, Math.min(roadWidth / 2 - 1.5, car.position.x));
+            carContainer.position.x = Math.max(-roadWidth / 2 + 1.2, Math.min(roadWidth / 2 - 1.2, carContainer.position.x));
+            carContainer.position.z -= currentSpeed;
 
-            // Move road/environment relative to car speed to simulate endless driving
-            car.position.z -= speed;
+            // Loop environment chunks
+            if (carContainer.position.z < -spacing) carContainer.position.z += spacing;
+            if (carContainer.position.z > spacing) carContainer.position.z -= spacing;
 
-            // Loop environment chunks for endless illusion
-            if (car.position.z < -spacing) {
-                car.position.z += spacing;
-            }
-            if (car.position.z > spacing) {
-                car.position.z -= spacing;
-            }
-
-            road.position.z = car.position.z - 200;
+            road.position.z = carContainer.position.z - 200;
             centerLine.position.z = road.position.z;
-            gridHelper.position.z = Math.floor(car.position.z / 50) * 50;
+            gridHelper.position.z = Math.floor(carContainer.position.z / 50) * 50;
 
-            // Smooth Camera Follow
-            camera.position.x = car.position.x * 0.5;
-            camera.position.y = car.position.y + 4;
-            camera.position.z = car.position.z + 10;
-            camera.lookAt(car.position.x, car.position.y + 1, car.position.z - 10);
+            // Camera Smoothing and Zoom calculations
+            const targetCamX = carContainer.position.x * 0.4;
+            const targetCamY = carContainer.position.y + (physics.zoom * 0.4);
+            const targetCamZ = carContainer.position.z + physics.zoom;
+
+            camera.position.x += (targetCamX - camera.position.x) * physics.smoothing;
+            camera.position.y += (targetCamY - camera.position.y) * physics.smoothing;
+            camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
+
+            camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z - 10);
+
+            // Update HUD
+            document.getElementById('hud-speed').textContent = `SPEED: ${Math.round(Math.abs(currentSpeed) * 80)} MPH`;
 
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Responsive Window Resize
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
