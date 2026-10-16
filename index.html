@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>White Grid Physics Test Studio & JSON Config</title>
+    <title>White/Black Checkered Physics Test Studio & JSON Config</title>
     <style>
         :root {
-            --bg: #e2e8f0;
+            --bg: #1e293b;
             --panel: rgba(255, 255, 255, 0.92);
             --accent: #2563eb;
             --text: #1e293b;
@@ -40,7 +40,7 @@
             border-radius: 12px;
             padding: 18px;
             z-index: 10;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             max-height: 92vh;
             overflow-y: auto;
         }
@@ -127,7 +127,7 @@
             font-family: monospace;
             pointer-events: none;
             backdrop-filter: blur(10px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
         #hud div {
             font-size: 13px;
@@ -144,65 +144,69 @@
         <h2>PHYSICS STUDIO</h2>
         <div class="control-group">
             <label>Weight (Mass): <span id="val-weight">1000</span> kg</label>
-            <input type="range" id="weight" min="200" max="4000" step="50" value="1000">
+            <input type="range" id="weight" min="50" max="3500" step="50" value="1000">
         </div>
         <div class="control-group">
             <label>Forward Accel: <span id="val-accel">0.02</span></label>
-            <input type="range" id="accel" min="0.005" max="1000.1" step="0.005" value="0.02">
+            <input type="range" id="accel" min="0.001" max="500.1" step="0.005" value="0.02">
         </div>
         <div class="control-group">
             <label>Braking Decel: <span id="val-brake">0.015</span></label>
-            <input type="range" id="brake" min="0.005" max="1000.05" step="0.005" value="0.015">
+            <input type="range" id="brake" min="0.001" max="500.05" step="0.005" value="0.015">
         </div>
         <div class="control-group">
             <label>Top Speed: <span id="val-topSpeed">1.5</span></label>
-            <input type="range" id="topSpeed" min="0.5" max="1003.0" step="0.1" value="1.5">
+            <input type="range" id="topSpeed" min="0.1" max="503.0" step="0.1" value="1.5">
         </div>
         <div class="control-group">
             <label>Turn Speed Factor: <span id="val-turnSpeedFactor">0.004</span></label>
-            <input type="range" id="turnSpeedFactor" min="0.0001" max="1000.02" step="0.0005" value="0.004">
+            <input type="range" id="turnSpeedFactor" min="0.0001" max="500.02" step="0.0005" value="0.004">
+        </div>
+        <div class="control-group">
+            <label>Turn Speed Limit (Cap): <span id="val-turnSpeedLimit">0.05</span></label>
+            <input type="range" id="turnSpeedLimit" min="0.001" max="501.0" step="0.005" value="0.05">
         </div>
 
         <h2>VEHICLE VISUALS & SCALE</h2>
         <div class="control-group">
             <label>Car Size (Scale): <span id="val-carScale">1.0</span>x</label>
-            <input type="range" id="carScale" min="0.2" max="1003.0" step="0.1" value="1.0">
+            <input type="range" id="carScale" min="0.1" max="503.0" step="0.1" value="1.0">
         </div>
         <div class="control-group">
             <label>Shininess (Metal/Rough): <span id="val-shininess">1.0</span></label>
-            <input type="range" id="shininess" min="0.0" max="1001.0" step="0.05" value="1.0">
+            <input type="range" id="shininess" min="0.0" max="501.0" step="0.05" value="1.0">
         </div>
 
         <h2>CAMERA STUDIO</h2>
         <div class="control-group">
             <label>Field of View (FOV): <span id="val-fov">65</span>°</label>
-            <input type="range" id="fov" min="30" max="1120" step="1" value="65">
+            <input type="range" id="fov" min="10" max="620" step="1" value="65">
         </div>
         <div class="control-group">
             <label>Base Camera Zoom: <span id="val-zoom">9</span>m</label>
-            <input type="range" id="zoom" min="3" max="1030" step="1" value="9">
+            <input type="range" id="zoom" min="1" max="530" step="1" value="9">
         </div>
         <div class="control-group">
             <label>Speed Zoom Factor: <span id="val-speedZoomFactor">2.0</span></label>
-            <input type="range" id="speedZoomFactor" min="0.0" max="1010.0" step="0.1" value="2.0">
+            <input type="range" id="speedZoomFactor" min="0.0" max="510.0" step="0.1" value="2.0">
         </div>
         <div class="control-group">
             <label>Camera Smoothing: <span id="val-smoothing">0.12</span></label>
-            <input type="range" id="smoothing" min="0.01" max="1000.5" step="0.01" value="0.12">
+            <input type="range" id="smoothing" min="0.001" max="500.5" step="0.01" value="0.12">
         </div>
 
         <h2>MODEL ORIENTATION FIXER</h2>
         <div class="control-group">
             <label>Model Rotation X: <span id="val-rotX">0</span>°</label>
-            <input type="range" id="rotX" min="-180" max="1180" step="1" value="0">
+            <input type="range" id="rotX" min="-680" max="680" step="1" value="0">
         </div>
         <div class="control-group">
             <label>Model Rotation Y: <span id="val-rotY">180</span>°</label>
-            <input type="range" id="rotY" min="-180" max="1180" step="1" value="180">
+            <input type="range" id="rotY" min="-680" max="680" step="1" value="180">
         </div>
         <div class="control-group">
             <label>Model Rotation Z: <span id="val-rotZ">0</span>°</label>
-            <input type="range" id="rotZ" min="-180" max="1180" step="1" value="0">
+            <input type="range" id="rotZ" min="-680" max="680" step="1" value="0">
         </div>
 
         <div class="json-section">
@@ -232,13 +236,14 @@
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
 
     <script>
-        // Physics & Tuning Configuration State
-        const physics = {
+        // Default Configuration State
+        const defaultPhysics = {
             weight: 1000,
             accel: 0.02,
             brake: 0.015,
             topSpeed: 1.5,
             turnSpeedFactor: 0.004,
+            turnSpeedLimit: 0.05,
             carScale: 1.0,
             shininess: 1.0,
             fov: 65,
@@ -250,12 +255,15 @@
             rotZ: 0
         };
 
+        let physics = { ...defaultPhysics };
+
         const bindings = [
             { id: 'weight', key: 'weight', unit: ' kg' },
             { id: 'accel', key: 'accel', unit: '' },
             { id: 'brake', key: 'brake', unit: '' },
             { id: 'topSpeed', key: 'topSpeed', unit: '' },
             { id: 'turnSpeedFactor', key: 'turnSpeedFactor', unit: '' },
+            { id: 'turnSpeedLimit', key: 'turnSpeedLimit', unit: '' },
             { id: 'carScale', key: 'carScale', unit: 'x' },
             { id: 'shininess', key: 'shininess', unit: '' },
             { id: 'fov', key: 'fov', unit: '°' },
@@ -310,7 +318,6 @@
             carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
         }
 
-        // Maximum ultra-mirror reflection chrome material setup
         const mirrorMaterial = new THREE.MeshStandardMaterial({ 
             color: 0x2563eb, 
             metalness: 1.0, 
@@ -343,21 +350,25 @@
         document.getElementById('loadJson').addEventListener('click', () => {
             try {
                 const parsed = JSON.parse(document.getElementById('jsonBox').value);
-                Object.keys(physics).forEach(k => {
-                    if (parsed[k] !== undefined) physics[k] = parsed[k];
+                // Merge with defaults: if any setting is missing from JSON, default it and add it
+                physics = { ...defaultPhysics };
+                Object.keys(parsed).forEach(k => {
+                    if (physics.hasOwnProperty(k)) {
+                        physics[k] = parsed[k];
+                    }
                 });
                 updateUIFromState();
-                alert('Settings loaded successfully!');
+                alert('Settings loaded successfully (missing values defaulted)!');
             } catch (err) {
                 alert('Invalid JSON formatting in text box.');
             }
         });
 
-        // Scene & Cube Camera Setup for real-time reflections
+        // Scene Setup
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xffffff);
-        scene.fog = new THREE.FogExp2(0xffffff, 0.008);
+        scene.background = new THREE.Color(0x1e293b);
+        scene.fog = new THREE.FogExp2(0x1e293b, 0.005);
 
         const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 1000);
         
@@ -370,7 +381,6 @@
         renderer.toneMappingExposure = 1.4;
         container.appendChild(renderer.domElement);
 
-        // Environment Map / Reflection Probe Generation via CubeRenderTarget
         const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter });
         const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
         scene.add(cubeCamera);
@@ -393,17 +403,30 @@
         dirLight.shadow.camera.bottom = -d;
         scene.add(dirLight);
 
-        // Ground Plane & Grid
-        const planeGeo = new THREE.PlaneGeometry(2000, 2000);
-        const planeMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+        // Procedural Big Black & White Checkered Ground Plane Texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+        const squares = 8; // Big squares
+        const size = canvas.width / squares;
+        for (let x = 0; x < squares; x++) {
+            for (let y = 0; y < squares; y++) {
+                ctx.fillStyle = (x + y) % 2 === 0 ? '#ffffff' : '#000000';
+                ctx.fillRect(x * size, y * size, size, size);
+            }
+        }
+        const checkerTexture = new THREE.CanvasTexture(canvas);
+        checkerTexture.wrapS = THREE.RepeatWrapping;
+        checkerTexture.wrapT = THREE.RepeatWrapping;
+        checkerTexture.repeat.set(40, 40); // Spans across the massive floor
+
+        const planeGeo = new THREE.PlaneGeometry(3000, 3000);
+        const planeMat = new THREE.MeshStandardMaterial({ map: checkerTexture, roughness: 0.4 });
         const plane = new THREE.Mesh(planeGeo, planeMat);
         plane.rotation.x = -Math.PI / 2;
         plane.receiveShadow = true;
         scene.add(plane);
-
-        const gridHelper = new THREE.GridHelper(2000, 200, 0x94a3b8, 0xe2e8f0);
-        gridHelper.position.y = 0.01;
-        scene.add(gridHelper);
 
         // Vehicle Setup
         const carContainer = new THREE.Group();
@@ -520,9 +543,10 @@
                 if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
             }
 
-            // Turn speed = car speed * turn speed factor
+            // Turn speed = car speed * turn speed factor, capped by turn speed limit
             if (Math.abs(currentSpeed) > 0.001) {
-                const dynamicTurnRate = currentSpeed * physics.turnSpeedFactor;
+                let dynamicTurnRate = Math.abs(currentSpeed) * physics.turnSpeedFactor;
+                dynamicTurnRate = Math.min(dynamicTurnRate, physics.turnSpeedLimit);
                 const turnMultiplier = currentSpeed > 0 ? 1 : -1;
                 if (keys.a) carAngle += dynamicTurnRate * turnMultiplier;
                 if (keys.d) carAngle -= dynamicTurnRate * turnMultiplier;
@@ -533,7 +557,7 @@
             carContainer.position.x += Math.sin(carAngle) * currentSpeed;
             carContainer.position.z += Math.cos(carAngle) * currentSpeed;
 
-            // Separate speed zoom factor calculation that doesn't mess with smooth turning lag
+            // Camera follow with speed zoom
             const currentZoomDistance = physics.zoom + (Math.abs(currentSpeed) * physics.speedZoomFactor);
 
             const targetCamX = carContainer.position.x - Math.sin(carAngle) * currentZoomDistance;
@@ -546,7 +570,7 @@
 
             camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
 
-            // Update realtime reflections for mirror shine
+            // Update realtime reflections
             carModelGroup.visible = false;
             cubeCamera.position.copy(carContainer.position);
             cubeCamera.update(renderer, scene);
