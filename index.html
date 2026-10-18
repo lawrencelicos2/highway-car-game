@@ -3589,19 +3589,19 @@ body.playing #mpHud.on { display: block; }
         const freeCamRot = { x: 0, y: 0 };
 
         window.addEventListener('keydown', (e) => {
-            if (['w','W'].includes(e.key)) keys.w = true;
-            if (['s','S'].includes(e.key)) keys.s = true;
-            if (['a','A'].includes(e.key)) keys.a = true;
-            if (['d','D'].includes(e.key)) keys.d = true;
+            if (['w','W','ArrowUp'].includes(e.key)) keys.w = true;
+            if (['s','S','ArrowDown'].includes(e.key)) keys.s = true;
+            if (['a','A','ArrowLeft'].includes(e.key)) keys.a = true;
+            if (['d','D','ArrowRight'].includes(e.key)) keys.d = true;
             if (['q','Q'].includes(e.key)) keys.q = true;
             if (['e','E'].includes(e.key)) keys.e = true;
-            if (e.key === 'Shift') keys.shift = true;
+            if (e.key === 'Shift') keys.shift = true; /*ARROW-KEYS*/ if (e.key.indexOf('Arrow') === 0) e.preventDefault();
         });
         window.addEventListener('keyup', (e) => {
-            if (['w','W'].includes(e.key)) keys.w = false;
-            if (['s','S'].includes(e.key)) keys.s = false;
-            if (['a','A'].includes(e.key)) keys.a = false;
-            if (['d','D'].includes(e.key)) keys.d = false;
+            if (['w','W','ArrowUp'].includes(e.key)) keys.w = false;
+            if (['s','S','ArrowDown'].includes(e.key)) keys.s = false;
+            if (['a','A','ArrowLeft'].includes(e.key)) keys.a = false;
+            if (['d','D','ArrowRight'].includes(e.key)) keys.d = false;
             if (['q','Q'].includes(e.key)) keys.q = false;
             if (['e','E'].includes(e.key)) keys.e = false;
             if (e.key === 'Shift') keys.shift = false;
