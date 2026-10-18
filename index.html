@@ -1764,16 +1764,18 @@ body.playing #carHud { display: block; }
         async function loadBuildingImages() {
             await Promise.all(bldImgFiles.map(f => {
                 if (bldImgCache.has(f.name)) return null;
-                return new Promise(res => {
-                    const url = f.siteUrl || URL.createObjectURL(f);
+                return new Promise(async res => {
+                    let url;
+                    try { url = (f.siteUrl && window.__fileShas && window.__fileShas[f.name]) ? URL.createObjectURL(await (await fetch(f.siteUrl)).blob()) : (f.siteUrl || URL.createObjectURL(f)); }
+                    catch (e) { url = f.siteUrl || URL.createObjectURL(f); }
                     new THREE.TextureLoader().load(url, t => {
-                        if (!f.siteUrl) URL.revokeObjectURL(url);
+                        if (url.startsWith('blob:')) URL.revokeObjectURL(url);
                         t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping;
                         t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
                         const im = t.image;
                         bldImgCache.set(f.name, { name: f.name, tex: t, aspect: (im && im.width) ? im.height / im.width : 1, mat: null });
                         res();
-                    }, undefined, () => { if (!f.siteUrl) URL.revokeObjectURL(url); res(); });
+                    }, undefined, () => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); res(); });
                 });
             }));
         }
@@ -3051,6 +3053,44 @@ body.playing #carHud { display: block; }
 
                 // ===== MENU / FOLDER LOADER / PAUSE =====
         const $m = id => document.getElementById(id);
+        /*FILECACHE*/
+        window.__fileShas = {};
+        (function () {
+            if (!window.caches || !window.fetch) return;
+            const origFetch = window.fetch.bind(window);
+            const EXT = /\.(glb|gltf|fbx|hdr|exr|webp|jpe?g|png|txt)$/i;
+            window.fetch = async function (input, init) {
+                try {
+                    const isReq = (typeof Request !== 'undefined') && input instanceof Request;
+                    const u = new URL(isReq ? input.url : String(input), location.href);
+                    const method = (isReq ? input.method : (init && init.method)) || 'GET';
+                    const signal = (init && init.signal) || (isReq && input.signal && input.signal.aborted);
+                    if (method === 'GET' && !signal && u.origin === location.origin) {
+                        let name = u.pathname.split('/').pop(); try { name = decodeURIComponent(name); } catch (e) {}
+                        const sha = window.__fileShas[name];
+                        if (sha && EXT.test(name)) {
+                            const tag = '?v=' + String(sha).slice(0, 12);
+                            const key = u.origin + u.pathname + tag;
+                            const cache = await caches.open('hwgame-files');
+                            const hit = await cache.match(key);
+                            if (hit) return hit;
+                            const res = await origFetch(input, init);
+                            if (res.ok && !(res.headers.get('content-type') || '').toLowerCase().includes('text/html')) {
+                                const copy = res.clone();
+                                cache.keys().then(ks => ks.forEach(k => {
+                                    const ku = new URL(k.url);
+                                    if (ku.pathname === u.pathname && ku.search !== tag) cache.delete(k);
+                                })).catch(() => {});
+                                cache.put(key, copy).catch(() => {});
+                            }
+                            return res;
+                        }
+                    }
+                } catch (e) {}
+                return origFetch(input, init);
+            };
+        })();
+
         const lib = { cars: [], skies: [], maps: [], carCfgFile: null, trafficCfgFile: null, buildingCfgFile: null };
         let carCfg = null, trafficCfg = null, buildingCfg = null, libSource = '', selCar = null, selSky = null, selMap = null;
         let gameStarted = false, gamePaused = false;
@@ -3072,7 +3112,14 @@ body.playing #carHud { display: block; }
             }
             return modelCache.get(file.name);
         }
-        function loadSkyTexture(file) {
+        async function loadSkyTexture(file) {
+            // site files: go through fetch so they come from / go into the saved copy
+            if (file.siteUrl && window.__fileShas && window.__fileShas[file.name]) {
+                try { file = new File([await (await fetch(file.siteUrl)).blob()], file.name); } catch (e) {}
+            }
+            return loadSkyTextureRaw(file);
+        }
+        function loadSkyTextureRaw(file) {
             return new Promise((res, rej) => {
                 const url = file.siteUrl || URL.createObjectURL(file);
                 const L = /\.exr$/i.test(file.name) ? new THREE.EXRLoader() : new THREE.RGBELoader();
@@ -3220,6 +3267,7 @@ body.playing #carHud { display: block; }
                 if (rr.ok) {
                     const jj = await rr.json();
                     const nn = Array.isArray(jj) ? jj.filter(x => x.type === 'file').map(x => x.name) : [];
+                    if (Array.isArray(jj)) jj.forEach(x => { if (x.type === 'file' && x.sha) window.__fileShas[x.name] = x.sha; });
                     if (nn.length) return nn;
                 }
             } catch (err) {}
