@@ -462,6 +462,12 @@ body.playing #mpHud.on { display: block; }
             <style>.pbox{max-height:92vh;overflow-y:auto}</style>
             <div class="pltitle">CLOUDS</div>
             <div id="pmClouds"></div>
+            <div class="pltitle">WEATHER</div>
+            <div id="pmWeather"></div>
+            <div class="pltitle">SKY &amp; TIME</div>
+            <div id="pmSky"></div>
+            <div class="pltitle">HEADLIGHTS</div>
+            <div id="pmLights"></div>
             <div class="pltitle">LICENSE PLATE</div>
             <div class="plrow">
                 <input type="text" id="pmPlateText" maxlength="16" placeholder="Your plate text">
@@ -883,6 +889,40 @@ body.playing #mpHud.on { display: block; }
             </div>
         </div>
 
+        <h2>MAP LOOK, FOG &amp; CAR SHAKE</h2>
+        <div class="control-group">
+            <label>Highway Reflection (0 = off, 1 = mirror):</label>
+            <div class="input-pair">
+                <input type="range" id="highwayReflection" min="0" max="1" step="0.01" value="0">
+                <input type="number" id="num-highwayReflection" step="0.01" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Highway Reflection Blur (0 = sharp, 1 = very blurry):</label>
+            <div class="input-pair">
+                <input type="range" id="highwayBlur" min="0" max="1" step="0.01" value="0.3">
+                <input type="number" id="num-highwayBlur" step="0.01" value="0.3">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Fog Amount (0 = no fog):</label>
+            <div class="input-pair">
+                <input type="range" id="fogDensity" min="0" max="0.03" step="0.0001" value="0.0006">
+                <input type="number" id="num-fogDensity" step="0.0001" value="0.0006">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Fog Color:</label>
+            <input type="color" id="fogColor" value="#ffffff">
+        </div>
+        <div class="control-group">
+            <label>Car Shake at High Speed (0 = off, 1 = default):</label>
+            <div class="input-pair">
+                <input type="range" id="carShake" min="0" max="10" step="0.1" value="1">
+                <input type="number" id="num-carShake" step="0.1" value="1">
+            </div>
+        </div>
+
         <h2>LIGHTING, SHADOWS & EFFECTS STUDIO</h2>
         <div class="control-group">
             <label>Base Brightness (Exposure):</label>
@@ -1113,6 +1153,49 @@ body.playing #mpHud.on { display: block; }
             </div>
         </div>
 
+        <h2>TURN CAMERA ROLL &amp; YAW</h2>
+        <div class="control-group">
+            <label>Roll Max Angle (deg, 0 = off):</label>
+            <div class="input-pair">
+                <input type="range" id="rollMax" min="0" max="90" step="0.5" value="15">
+                <input type="number" id="num-rollMax" step="0.5" value="15">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Roll Factor (deg per turn speed):</label>
+            <div class="input-pair">
+                <input type="range" id="rollFactor" min="0" max="60" step="0.1" value="8">
+                <input type="number" id="num-rollFactor" step="0.1" value="8">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Roll Smoothing (low = slow, 1 = instant):</label>
+            <div class="input-pair">
+                <input type="range" id="rollSmooth" min="0.01" max="1" step="0.01" value="0.15">
+                <input type="number" id="num-rollSmooth" step="0.01" value="0.15">
+            </div>
+        </div>
+        <div class="control-group">
+            <label><input type="checkbox" id="rollInvert"> Invert Roll</label>
+        </div>
+        <div class="control-group">
+            <label>Yaw Max Angle (deg, 0 = off):</label>
+            <div class="input-pair">
+                <input type="range" id="yawMax" min="0" max="90" step="0.5" value="10">
+                <input type="number" id="num-yawMax" step="0.5" value="10">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Yaw Factor (deg per turn speed):</label>
+            <div class="input-pair">
+                <input type="range" id="yawFactor" min="0" max="60" step="0.1" value="4">
+                <input type="number" id="num-yawFactor" step="0.1" value="4">
+            </div>
+        </div>
+        <div class="control-group">
+            <label><input type="checkbox" id="yawInvert"> Invert Yaw</label>
+        </div>
+
         <h2>MODEL ORIENTATION FIXER</h2>
         <div class="control-group">
             <label>Model Rotation X:</label>
@@ -1287,6 +1370,7 @@ body.playing #mpHud.on { display: block; }
             soundSharpness: 10,
             carScale: 1.0,
             shininess: 1.0,
+            carShake: 1,
             fov: 65,
             zoom: 9,
             speedZoomFactor: 2.0,
@@ -1297,6 +1381,13 @@ body.playing #mpHud.on { display: block; }
             camRotX: 0,
             camRotY: 0,
             camRotZ: 0,
+            rollMax: 15,
+            rollFactor: 8,
+            rollInvert: 0,
+            rollSmooth: 0.15,
+            yawMax: 10,
+            yawFactor: 4,
+            yawInvert: 0,
             rotX: 0,
             rotY: 180,
             rotZ: 0
@@ -1328,11 +1419,26 @@ body.playing #mpHud.on { display: block; }
             cloudDensity: 0.7,
             cloudSpeed: 8,
             cloudHeight: 900,
-            cloudBrightness: 1
+            cloudBrightness: 1,
+            highwayReflection: 0,
+            highwayBlur: 0.3,
+            fogDensity: 0.0006,
+            fogColor: "#ffffff",
+            timeOfDay: 12,
+            timeSpeed: 0,
+            carReflectance: 2,
+            headlightMode: 2,
+            headlightBrightness: 1
         };
         let envConfig = { ...defaultEnvConfig };
         let cameraMode = 'car';
         let gridMode = 'checkerboard';
+        // custom sky / time of day state (declared early so every function can read it)
+        let skyCustom = false;
+        let hdrSkyTex = null;
+        const CUSTOM_SKY = { name: '__custom__', custom: true };
+        const skyRt = { hour: 12, init: false, sunAz: 38.7, sunEl: 57.4, last: 0, fogStr: '' };
+        const fogEff = new THREE.Color(1, 1, 1), fogUser = new THREE.Color(1, 1, 1);
 
         const propKeys = Object.keys(defaultPropConfig);
         const physicsKeys = Object.keys(defaultPhysics);
@@ -1395,6 +1501,7 @@ body.playing #mpHud.on { display: block; }
             });
 
             document.getElementById('cameraMode').value = cameraMode;
+            ['rollInvert', 'yawInvert'].forEach(k => { const cb = document.getElementById(k); if (cb) cb.checked = !!physics[k]; });
             document.getElementById('gridMode').value = gridMode;
 
             buildPatternGridUI();
@@ -1575,7 +1682,7 @@ body.playing #mpHud.on { display: block; }
         renderer.toneMappingExposure = 1.4;
         container.appendChild(renderer.domElement);
 
-        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter });
         const cubeCamera = new THREE.CubeCamera(0.1, 10000, cubeRenderTarget);
         scene.add(cubeCamera);
 
@@ -1669,6 +1776,7 @@ body.playing #mpHud.on { display: block; }
                 clone.rotation.z = THREE.MathUtils.degToRad(propConfig.propRotZ);
                 highwayPropGroup.add(clone);
             }
+            applyHighwayLook();
         }
 
 
@@ -2004,6 +2112,123 @@ body.playing #mpHud.on { display: block; }
         scene.add(aiGroup);
         let baseCarSourceModel = null;
 
+        /*HEADLIGHTS*/
+        const hlRt = { amt: 0, b: -1, on: false, last: performance.now() };
+        const hlFlareTex = (function () {
+            const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+            const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,0.55)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+            g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+            return new THREE.CanvasTexture(cv);
+        })();
+        const hlPoolTex = (function () {
+            const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128;
+            const g = cv.getContext('2d'), im = g.createImageData(64, 128);
+            for (let y = 0; y < 128; y++) for (let x = 0; x < 64; x++) {
+                const u = (x / 63 - 0.5) * 2, v = y / 127; // top of the image = next to the car
+                const val = Math.pow(Math.max(0, 1 - u * u), 1.4) * Math.pow(1 - v, 1.7) * Math.min(1, 0.35 + v * 6);
+                const i = (y * 64 + x) * 4; im.data[i] = 255; im.data[i + 1] = 240; im.data[i + 2] = 200; im.data[i + 3] = Math.round(val * 255);
+            }
+            g.putImageData(im, 0, 0);
+            return new THREE.CanvasTexture(cv);
+        })();
+        const hlBeamGeo = (function () {
+            const L = 26, R = 3.4, g = new THREE.ConeGeometry(R, L, 20, 1, true);
+            g.translate(0, -L / 2, 0); g.rotateX(-Math.PI / 2); // apex at the lamp, opens along +z
+            const pos = g.attributes.position, col = new Float32Array(pos.count * 3);
+            for (let i = 0; i < pos.count; i++) { const k = Math.pow(1 - pos.getZ(i) / L, 1.6); col[i * 3] = k; col[i * 3 + 1] = k * 0.95; col[i * 3 + 2] = k * 0.85; }
+            g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            return g;
+        })();
+        const hlPoolGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+        const hlBeamMat = new THREE.MeshBasicMaterial({ color: 0xfff0cc, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false });
+        const hlPoolMat = new THREE.MeshBasicMaterial({ map: hlPoolTex, color: 0xfff0cc, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+        const hlFlareMat = new THREE.SpriteMaterial({ map: hlFlareTex, color: 0xfff4d8, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+        const hlTailMat = new THREE.SpriteMaterial({ map: hlFlareTex, color: 0xff2a18, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+        function hlApplyScale(g) {
+            const b = hlRt.b < 0 ? 1 : hlRt.b, kh = 0.75 + 0.35 * Math.min(b, 3), kt = 0.8 + 0.2 * Math.min(b, 2);
+            g.userData.heads.forEach(s => s.scale.set(s.userData.base * kh, s.userData.base * kh, 1));
+            g.userData.tails.forEach(s => s.scale.set(s.userData.base * kt, s.userData.base * kt, 1));
+        }
+        // zf = front of the car (z), zr = back, hx = lamp spacing, y = lamp height (all in the car's own space, front = +z)
+        function makeHeadlightRig(hx, zf, y, zr) {
+            const g = new THREE.Group(), fx = new THREE.Group(); g.add(fx);
+            g.userData.heads = []; g.userData.tails = []; g.userData.fx = fx;
+            [-1, 1].forEach(s => {
+                const beam = new THREE.Mesh(hlBeamGeo, hlBeamMat); beam.position.set(s * hx, y, zf); beam.rotation.set(0.05, s * 0.03, 0);
+                beam.frustumCulled = false; beam.userData.isPlate = true; fx.add(beam);
+                const hs = new THREE.Sprite(hlFlareMat); hs.position.set(s * hx, y, zf + 0.05); hs.userData.base = 1.5; fx.add(hs); g.userData.heads.push(hs);
+                const ts = new THREE.Sprite(hlTailMat); ts.position.set(s * hx, y + 0.05, zr - 0.05); ts.userData.base = 0.8; fx.add(ts); g.userData.tails.push(ts);
+            });
+            const pool = new THREE.Mesh(hlPoolGeo, hlPoolMat); pool.position.set(0, 0.07, zf + 11); pool.scale.set(8, 1, 22);
+            pool.frustumCulled = false; pool.userData.isPlate = true; fx.add(pool);
+            g.visible = hlRt.on; hlApplyScale(g);
+            return g;
+        }
+        const playerRig = makeHeadlightRig(0.66, 1.8, 0.7, -1.8); carContainer.add(playerRig);
+        // two real spotlights on the player's car (always in the scene at intensity 0 so shaders never recompile when toggled)
+        const hlSpots = [-1, 1].map(s => {
+            const sp = new THREE.SpotLight(0xfff0d2, 0, 110, 0.5, 0.75, 1);
+            sp.position.set(s * 0.65, 0.8, 1.8); sp.target.position.set(s * 1.2, -0.3, 40);
+            carContainer.add(sp); carContainer.add(sp.target); return sp;
+        });
+        function hlEachRig(fn) {
+            fn(playerRig);
+            aiGroup.children.forEach(c => { if (c.userData.hl) fn(c.userData.hl); });
+            try { remoteGroup.children.forEach(r => { if (r.userData && r.userData.hl) fn(r.userData.hl); }); } catch (e) {}
+        }
+        function setFxVisible(v) { hlEachRig(g => { g.userData.fx.visible = v; }); }
+        function updateHeadlights() {
+            const now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - hlRt.last) / 1000)); hlRt.last = now;
+            const c = envConfig, mode = Math.round(+c.headlightMode || 0);
+            const night = 1 - THREE.MathUtils.smoothstep(skyRt.sunEl, -6, 9);
+            const want = mode === 1 ? 1 : (mode === 2 ? night : 0);
+            hlRt.amt += (want - hlRt.amt) * (1 - Math.exp(-dt * 4)); // fades in and out
+            if (Math.abs(want - hlRt.amt) < 0.003) hlRt.amt = want;
+            const a = hlRt.amt, on = a > 0.004, b = Math.max(0, +c.headlightBrightness || 0), vis = 0.3 + 0.7 * night;
+            hlBeamMat.opacity = Math.min(1, 0.16 * b * a * vis);
+            hlPoolMat.opacity = Math.min(1, 0.6 * b * a * vis);
+            hlFlareMat.opacity = Math.min(1, a * (0.55 + 0.45 * Math.min(b, 1)));
+            hlTailMat.opacity = Math.min(1, a * 0.85);
+            hlSpots.forEach(sp => { sp.intensity = 9 * b * a * vis; });
+            const changed = on !== hlRt.on || Math.abs(b - hlRt.b) > 0.004;
+            hlRt.on = on; if (changed) hlRt.b = b;
+            hlEachRig(g => { if (changed) hlApplyScale(g); g.visible = on; });
+        }
+
+        // ---- car reflectance: 0 = matte paint, 1 = mirror, up to 3 = ultra chrome ----
+        function applyCarReflectance() {
+            let r = +envConfig.carReflectance; if (!isFinite(r)) r = 1; r = Math.max(0, r);
+            const envB = (envConfig.envBrightness === undefined) ? 1 : envConfig.envBrightness;
+            const seen = new Set(), white = new THREE.Color(1, 1, 1), rc = Math.min(r, 1);
+            const doMat = (m) => {
+                if (!m || seen.has(m)) return; seen.add(m);
+                const u = m.userData; if (!u.carOrig) u.carOrig = { color: m.color ? m.color.clone() : null };
+                const env = r > 0.001 ? cubeRenderTarget.texture : null;
+                if (m.isMeshStandardMaterial) {
+                    m.metalness = 0.1 + 0.9 * rc; m.roughness = 0.6 * (1 - rc) * (1 - rc);
+                    u.baseEnvIntensity = 3 * r; m.envMapIntensity = u.baseEnvIntensity * envB;
+                    if (m.envMap !== env) { m.envMap = env; m.needsUpdate = true; }
+                    if (m.color && u.carOrig.color) { m.color.copy(u.carOrig.color); if (r > 1) m.color.lerp(white, Math.min(1, (r - 1) / 2) * 0.7); }
+                } else if (m.reflectivity !== undefined) { // FBX cars are usually Phong/Lambert
+                    if (m.envMap !== env || m.combine !== THREE.MixOperation) { m.envMap = env; m.combine = THREE.MixOperation; m.needsUpdate = true; }
+                    m.reflectivity = Math.min(1, r * 0.5);
+                }
+            };
+            const doObj = (root) => root.traverse(o => {
+                if (!o.isMesh || !o.material || o.userData.isPlate || o.userData.isHitbox) return;
+                (Array.isArray(o.material) ? o.material : [o.material]).forEach(doMat);
+            });
+            doObj(carModelGroup);
+            doMat(mirrorMaterial); doMat(roofMirrorMaterial);
+            if (envConfig.trafficReflections) {
+                trafficModels.forEach(t => { if (t.source) doObj(t.source); });
+                doObj(aiGroup);
+            }
+            if (baseCarSourceModel) doObj(baseCarSourceModel);
+            try { doObj(remoteGroup); } catch (e) {}
+        }
+
         let trafficModels = [
             { "name": "mazda3.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 0.8, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 },
             { "name": "FINAL_MODEL_GTS.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 1, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 }
@@ -2287,6 +2512,11 @@ body.playing #mpHud.on { display: block; }
 
             const plateMesh = makePlateMesh(); container.add(plateMesh);
             container.userData = { passed: false, side: side, entry: visual.userData.entry, hitGroup: hitGroup, plateMesh: plateMesh, plateRand: randomPlateText() };
+            {
+                const hb = visual.userData.entry || DEFAULT_HITBOX, hL = hb.hbL || 3.5, hW = hb.hbW || 2, hY = hb.hbY === undefined ? 0.75 : hb.hbY, hH = hb.hbH || 1.5, hZ = hb.hbZ || 0;
+                const rg = makeHeadlightRig(hW * 0.33, hZ + hL / 2 - 0.12, hY - hH / 2 + 0.72, hZ - hL / 2 + 0.12);
+                container.add(rg); container.userData.hl = rg;
+            }
             return container;
         }
 
@@ -2363,11 +2593,11 @@ body.playing #mpHud.on { display: block; }
             reader.onload = function (event) {
                 const url = URL.createObjectURL(new Blob([event.target.result]));
                 if (fileName.endsWith('.hdr')) {
-                    new THREE.RGBELoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                    new THREE.RGBELoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; setCustomSky(false); });
                 } else if (fileName.endsWith('.exr')) {
-                    new THREE.EXRLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                    new THREE.EXRLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; setCustomSky(false); });
                 } else {
-                    new THREE.TextureLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                    new THREE.TextureLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; setCustomSky(false); });
                 }
             };
         });
@@ -2459,7 +2689,7 @@ body.playing #mpHud.on { display: block; }
         }
 
         function updateLightPositions() {
-            placeLight(dirLight, envConfig.sunAzimuth, envConfig.sunElevation);
+            placeLight(dirLight, skyCustom ? skyRt.sunAz : envConfig.sunAzimuth, skyCustom ? skyRt.sunEl : envConfig.sunElevation);
             placeLight(moonLight, envConfig.moonAzimuth, envConfig.moonElevation);
         }
 
@@ -2479,10 +2709,87 @@ body.playing #mpHud.on { display: block; }
             const sc = dirLight.shadow.camera;
             sc.left = -sd; sc.right = sd; sc.top = sd; sc.bottom = -sd;
             sc.updateProjectionMatrix();
-            applyCarShadows(); applyTrafficReflections(); applyEnvIntensity(); updateLightPositions();
+            applyCarShadows(); applyTrafficReflections(); applyCarReflectance(); applyHighwayLook(); applyEnvIntensity(); updateLightPositions(); applyFogLook();
         }
 
         function updateEnvJson() { envJsonBox.value = JSON.stringify(envConfig, null, 2); }
+
+        // ---- highway reflection / blur + fog ----
+        const hwReflMats = [];
+        function applyHighwayLook() {
+            const r = THREE.MathUtils.clamp(envConfig.highwayReflection || 0, 0, 1);
+            const b = THREE.MathUtils.clamp(envConfig.highwayBlur || 0, 0, 1);
+            const envB = (envConfig.envBrightness === undefined) ? 1 : envConfig.envBrightness;
+            const seen = new Set(); hwReflMats.length = 0;
+            highwayPropGroup.traverse(o => {
+                if (!o.isMesh || !o.material) return;
+                (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => {
+                    if (!m.isMeshStandardMaterial || seen.has(m)) return;
+                    seen.add(m);
+                    if (!m.userData.hwOrig) m.userData.hwOrig = { metalness: m.metalness, roughness: m.roughness, envMap: m.envMap, base: (m.userData.baseEnvIntensity !== undefined) ? m.userData.baseEnvIntensity : m.envMapIntensity };
+                    const o0 = m.userData.hwOrig, had = !!m.envMap;
+                    if (r <= 0) {
+                        m.metalness = o0.metalness; m.roughness = o0.roughness; m.envMap = o0.envMap; m.userData.baseEnvIntensity = o0.base;
+                    } else {
+                        const targetRough = 0.03 + b * 0.97;
+                        m.metalness = o0.metalness + (0.6 - o0.metalness) * r;
+                        m.roughness = o0.roughness + (targetRough - o0.roughness) * r;
+                        m.envMap = cubeRenderTarget.texture;
+                        m.userData.baseEnvIntensity = o0.base + 1.2 * r;
+                        hwReflMats.push(m);
+                    }
+                    m.envMapIntensity = m.userData.baseEnvIntensity * envB;
+                    if (had !== !!m.envMap) m.needsUpdate = true;
+                });
+            });
+        }
+        // the highway can't sample the cube map while the cube camera is drawing into it
+        function hwReflCapture(on) {
+            for (let i = 0; i < hwReflMats.length; i++) hwReflMats[i].envMap = on ? cubeRenderTarget.texture : null;
+        }
+        // ---- saved player prefs (cookie, localStorage as backup): weather + license plate ----
+        var PREF_KEY = 'hw_prefs';
+        var PREF_WEATHER_KEYS = ['cloudCover', 'cloudDensity', 'cloudSpeed', 'cloudHeight', 'cloudBrightness', 'highwayReflection', 'highwayBlur', 'fogDensity', 'fogColor', 'carReflectance', 'timeOfDay', 'timeSpeed', 'headlightMode', 'headlightBrightness'];
+        function prefsRead() {
+            let raw = null;
+            try { const hit = document.cookie.split('; ').find(s => s.indexOf(PREF_KEY + '=') === 0); if (hit) raw = decodeURIComponent(hit.slice(PREF_KEY.length + 1)); } catch (e) {}
+            if (!raw) { try { raw = localStorage.getItem(PREF_KEY); } catch (e) {} }
+            if (!raw) return {};
+            try { const o = JSON.parse(raw); return (o && typeof o === 'object') ? o : {}; } catch (e) { return {}; }
+        }
+        function prefsWrite(o) {
+            const raw = JSON.stringify(o);
+            try { document.cookie = PREF_KEY + '=' + encodeURIComponent(raw) + '; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
+            try { localStorage.setItem(PREF_KEY, raw); } catch (e) {}
+        }
+        function prefsSaveWeather() {
+            const o = prefsRead(), w = {};
+            PREF_WEATHER_KEYS.forEach(k => { if (envConfig[k] !== undefined) w[k] = envConfig[k]; });
+            o.w = w; prefsWrite(o);
+        }
+        function prefsSavePlate() {
+            const c = getPlayerPlateCfg(), o = prefsRead();
+            o.p = { t: String(c.plateText || '').slice(0, 16), o: c.plateOn ? 1 : 0 }; prefsWrite(o);
+        }
+        function prefsApplyWeather() {
+            const w = prefsRead().w; if (!w || typeof w !== 'object') return;
+            PREF_WEATHER_KEYS.forEach(k => {
+                const v = w[k];
+                if (typeof defaultEnvConfig[k] === 'string') { if (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) envConfig[k] = v; }
+                else if (typeof v === 'number' && isFinite(v)) envConfig[k] = v;
+            });
+        }
+        function prefsApplyPlate() {
+            const p = prefsRead().p; if (!p || typeof p !== 'object') return;
+            const c = getPlayerPlateCfg();
+            if (typeof p.t === 'string') c.plateText = p.t.slice(0, 16);
+            if (p.o === 0 || p.o === 1) c.plateOn = p.o;
+        }
+        function applyFogLook() {
+            if (!scene.fog) return;
+            scene.fog.color.set(envConfig.fogColor || '#ffffff');
+            scene.fog.density = Math.max(0, envConfig.fogDensity || 0);
+        }
         function syncEnvUI() {
             envKeys.forEach(k => {
                 const el = document.getElementById(k); if (el) el.value = envConfig[k];
@@ -2557,7 +2864,8 @@ body.playing #mpHud.on { display: block; }
             uniforms: {
                 uWind: { value: new THREE.Vector2() }, uTime: { value: 0 },
                 uCover: { value: 0.45 }, uDensity: { value: 0.7 }, uHeight: { value: 900 }, uBright: { value: 1 },
-                uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Color(1, 1, 1) }, uDay: { value: 1 }
+                uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Color(1, 1, 1) }, uDay: { value: 1 },
+                uSunset: { value: 0 }, uHorMix: { value: 0 }, uHorCol: { value: new THREE.Color(1, 1, 1) }, uZenCol: { value: new THREE.Color(0.2, 0.3, 0.55) }
             },
             vertexShader: `
                 varying vec3 vWorld;
@@ -2567,8 +2875,8 @@ body.playing #mpHud.on { display: block; }
                     gl_Position = projectionMatrix * viewMatrix * wp;
                 }`,
             fragmentShader: `
-                uniform vec2 uWind; uniform float uTime, uCover, uDensity, uHeight, uBright, uDay;
-                uniform vec3 uSunDir, uSunCol;
+                uniform vec2 uWind; uniform float uTime, uCover, uDensity, uHeight, uBright, uDay, uSunset, uHorMix;
+                uniform vec3 uSunDir, uSunCol, uHorCol, uZenCol;
                 varying vec3 vWorld;
                 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
                 float noise(vec2 p) {
@@ -2580,40 +2888,60 @@ body.playing #mpHud.on { display: block; }
                     for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
                     return v;
                 }
-                // returns rgb + alpha of one cloud layer
-                vec4 layer(vec3 dir, float h, float cover, float seed, float windMul) {
+                // one billowy cloud layer: rgb + alpha. At sunset the sun side glows gold, the far side goes pink, undersides turn purple
+                vec4 layer(vec3 dir, float h, float cover, float seed, float windMul, float hi) {
                     float t = h / dir.y;
                     vec2 w = cameraPosition.xz + dir.xz * t + uWind * windMul;
                     float scale = 1.0 / (h * 0.9);
                     vec2 p = w * scale + seed;
-                    // slow domain warp = the clouds keep changing shape while they drift
-                    p += 0.35 * vec2(noise(p * 0.6 + uTime * 0.015), noise(p * 0.6 + 17.0 - uTime * 0.012));
+                    p += 0.40 * vec2(noise(p * 0.6 + uTime * 0.015), noise(p * 0.6 + 17.0 - uTime * 0.012));
                     float d = fbm(p);
                     float thr = mix(0.80, 0.18, cover);
-                    float c = smoothstep(thr, thr + 0.24, d);
-                    // shade: look a little toward the sun, denser there = this part is in shadow
+                    float c = smoothstep(thr, thr + 0.22, d);
                     vec2 sd = normalize(uSunDir.xz + vec2(0.0001)) * 0.07;
                     float d2 = fbm(p + sd);
-                    float lit = clamp(0.62 + (d - d2) * 5.0, 0.0, 1.0);
+                    float lit = clamp(0.62 + (d - d2) * 5.5, 0.0, 1.0);
                     float thick = smoothstep(thr, thr + 0.45, d);
-                    lit *= mix(1.0, 0.55, thick * uDensity);
-                    float warm = (1.0 - smoothstep(0.0, 0.35, uSunDir.y)) * uDay;
-                    vec3 litCol = mix(vec3(1.0), uSunCol, 0.35) * (0.30 + 0.70 * uDay);
-                    litCol = mix(litCol, vec3(1.0, 0.58, 0.32), warm * 0.55);
-                    vec3 shCol = vec3(0.50, 0.57, 0.70) * (0.22 + 0.78 * uDay);
+                    lit *= mix(1.0, 0.5, thick * uDensity);
+                    float edge = c * (1.0 - smoothstep(thr + 0.04, thr + 0.34, d));
+                    float sunSide = pow(max(dot(dir, uSunDir), 0.0), 3.0);
+                    float dayK = 0.06 + 0.94 * uDay;
+                    vec3 dayLit = mix(vec3(1.0), uSunCol, 0.35);
+                    vec3 setFar = mix(vec3(1.0, 0.50, 0.26), vec3(1.0, 0.36, 0.52), hi * 0.6);
+                    vec3 setLit = mix(setFar * 0.8, vec3(1.0, 0.64, 0.32) * 1.25, sunSide);
+                    vec3 litCol = mix(dayLit, setLit, uSunset) * dayK;
+                    vec3 shCol = mix(vec3(0.50, 0.57, 0.70), uZenCol * 1.5 + vec3(0.14, 0.04, 0.16), uSunset) * (0.05 + 0.95 * uDay);
+                    vec3 col = mix(shCol, litCol, lit);
+                    col += uSunCol * sunSide * edge * (0.45 + 0.9 * uSunset) * dayK; // glowing rim facing the sun
                     float a = clamp(c * (0.35 + 0.95 * uDensity), 0.0, 1.0);
-                    return vec4(mix(shCol, litCol, lit), a);
+                    return vec4(col, a);
+                }
+                // thin high streaky cloud
+                vec4 cirrus(vec3 dir) {
+                    float t = (uHeight * 3.2) / dir.y;
+                    vec2 w = (cameraPosition.xz + dir.xz * t + uWind * 0.25) / (uHeight * vec2(5.5, 1.5));
+                    float d = fbm(w * 2.0 + vec2(7.3, 2.1) + uTime * 0.004);
+                    float a = smoothstep(0.52, 0.86, d) * (0.18 + 0.4 * uCover);
+                    float sunSide = pow(max(dot(dir, uSunDir), 0.0), 2.0);
+                    float dayK = 0.06 + 0.94 * uDay;
+                    vec3 col = mix(vec3(1.0), mix(vec3(1.0, 0.45, 0.38), vec3(1.0, 0.72, 0.42), sunSide), uSunset) * dayK;
+                    return vec4(col, a);
                 }
                 void main() {
                     vec3 dir = normalize(vWorld - cameraPosition);
                     float horizon = smoothstep(0.02, 0.20, dir.y);
                     if (horizon <= 0.0) discard;
-                    vec4 c1 = layer(dir, uHeight, uCover, 0.0, 1.0);
-                    vec4 c2 = layer(dir, uHeight * 1.7, uCover * 0.85, 31.7, 0.6);
+                    vec4 c1 = layer(dir, uHeight, uCover, 0.0, 1.0, 0.0);
+                    vec4 c2 = layer(dir, uHeight * 1.7, uCover * 0.85, 31.7, 0.6, 1.0);
                     c2.a *= 0.65;
-                    float a = c1.a + c2.a * (1.0 - c1.a);
+                    vec4 c3 = cirrus(dir);
+                    float a12 = c1.a + c2.a * (1.0 - c1.a);
+                    vec3 col12 = a12 > 0.0001 ? (c1.rgb * c1.a + c2.rgb * c2.a * (1.0 - c1.a)) / a12 : vec3(0.0);
+                    float a = a12 + c3.a * (1.0 - a12);
                     if (a < 0.003) discard;
-                    vec3 col = (c1.rgb * c1.a + c2.rgb * c2.a * (1.0 - c1.a)) / a;
+                    vec3 col = (col12 * a12 + c3.rgb * c3.a * (1.0 - a12)) / a;
+                    float hz = pow(1.0 - clamp(dir.y, 0.0, 1.0), 3.0);
+                    col = mix(col, uHorCol, hz * 0.55 * uHorMix); // far clouds melt into the sky colour
                     gl_FragColor = vec4(col * uBright, a * horizon);
                     #include <tonemapping_fragment>
                     #include <encodings_fragment>
@@ -2623,6 +2951,38 @@ body.playing #mpHud.on { display: block; }
         const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(4500, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), cloudMaterial);
         cloudMesh.frustumCulled = false; cloudMesh.renderOrder = 1;
         scene.add(cloudMesh);
+        // fog haze dome: tints the sky toward the fog color near the horizon so the fog reaches into the air
+        const fogDomeMaterial = new THREE.ShaderMaterial({
+            transparent: true, depthWrite: false, depthTest: true, side: THREE.BackSide, fog: false,
+            uniforms: { uColor: { value: new THREE.Color(1, 1, 1) }, uAmount: { value: 0 }, uHeight: { value: 0.3 } },
+            vertexShader: [
+                'varying vec3 vDir;',
+                'void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }'
+            ].join('\n'),
+            fragmentShader: [
+                'uniform vec3 uColor; uniform float uAmount, uHeight; varying vec3 vDir;',
+                'void main() {',
+                '  float a = uAmount * (1.0 - smoothstep(0.0, uHeight, vDir.y));',
+                '  gl_FragColor = vec4(uColor, a);',
+                '  #include <tonemapping_fragment>',
+                '  #include <encodings_fragment>',
+                '}'
+            ].join('\n')
+        });
+        const fogDome = new THREE.Mesh(new THREE.SphereGeometry(4400, 32, 16), fogDomeMaterial);
+        fogDome.frustumCulled = false; fogDome.renderOrder = 2;
+        scene.add(fogDome);
+        const fogDomeTmp = new THREE.Vector3();
+        function updateFogDome() {
+            const d = Math.max(0, +envConfig.fogDensity || 0);
+            const amt = 1 - Math.exp(-Math.pow(d * 1500, 2));
+            fogDome.visible = amt > 0.004;
+            if (!fogDome.visible) return;
+            camera.getWorldPosition(fogDomeTmp); fogDome.position.copy(fogDomeTmp);
+            const u = fogDomeMaterial.uniforms;
+            u.uColor.value.copy(fogEff);
+            u.uAmount.value = amt; u.uHeight.value = 0.08 + 0.55 * amt;
+        }
         const cloudWindDir = new THREE.Vector2(1, 0.25).normalize();
         const cloudTmpV = new THREE.Vector3();
         let cloudLast = performance.now() / 1000;
@@ -2635,9 +2995,12 @@ body.playing #mpHud.on { display: block; }
             const u = cloudMaterial.uniforms;
             u.uWind.value.addScaledVector(cloudWindDir, (+c.cloudSpeed || 0) * dt);
             camera.getWorldPosition(cloudTmpV); cloudMesh.position.copy(cloudTmpV);
-            const az = THREE.MathUtils.degToRad(c.sunAzimuth), el = THREE.MathUtils.degToRad(c.sunElevation);
+            const az = THREE.MathUtils.degToRad(skyRt.sunAz), el = THREE.MathUtils.degToRad(skyRt.sunEl);
             u.uSunDir.value.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
-            u.uSunCol.value.set(c.sunColor);
+            if (skyCustom) { u.uSunCol.value.copy(skyS.sc); u.uHorCol.value.copy(skyS.hor); u.uZenCol.value.copy(skyS.zen); }
+            else { u.uSunCol.value.set(c.sunColor); u.uHorCol.value.setRGB(1, 1, 1); u.uZenCol.value.setRGB(0.2, 0.3, 0.55); }
+            u.uHorMix.value = skyCustom ? 1 : 0;
+            u.uSunset.value = THREE.MathUtils.smoothstep(skyRt.sunEl, -10, 0) * (1 - THREE.MathUtils.smoothstep(skyRt.sunEl, 3, 24));
             u.uDay.value = THREE.MathUtils.smoothstep(u.uSunDir.value.y, -0.12, 0.2);
             u.uTime.value = now % 100000;
             u.uCover.value = cover;
@@ -2646,6 +3009,110 @@ body.playing #mpHud.on { display: block; }
             u.uBright.value = Math.max(0, +c.cloudBrightness);
         }
 
+
+
+        /*CUSTOM SKY + TIME OF DAY*/
+        // keyframes by sun elevation (degrees): sky colours, light strength relative to your lighting settings, stars
+        const SKY_KEYS = [
+            { el: -90, zen: [.003, .004, .010], hor: [.008, .010, .024], sun: 0,   sc: [1, .60, .30], amb: .035, ac: [.5, .6, 1],   moon: .16, ex: .9,  st: 1 },
+            { el: -16, zen: [.004, .006, .016], hor: [.014, .014, .036], sun: 0,   sc: [1, .50, .25], amb: .04,  ac: [.5, .6, 1],   moon: .16, ex: .9,  st: 1 },
+            { el: -8,  zen: [.030, .024, .095], hor: [.17, .06, .17],    sun: 0,   sc: [1, .45, .20], amb: .12,  ac: [.7, .55, .9], moon: .12, ex: 1.0, st: .55 },
+            { el: -2,  zen: [.13, .07, .32],    hor: [.85, .30, .12],    sun: .12, sc: [1, .42, .18], amb: .32,  ac: [.9, .6, .8],  moon: .05, ex: 1.1, st: .08 },
+            { el: 3,   zen: [.30, .15, .56],    hor: [1.0, .45, .14],    sun: .65, sc: [1, .52, .24], amb: .50,  ac: [1, .75, .8],  moon: 0,   ex: 1.15, st: 0 },
+            { el: 10,  zen: [.22, .26, .66],    hor: [1.0, .66, .38],    sun: .95, sc: [1, .72, .46], amb: .75,  ac: [1, .9, .9],   moon: 0,   ex: 1.1, st: 0 },
+            { el: 22,  zen: [.15, .34, .80],    hor: [.70, .80, .95],    sun: 1.1, sc: [1, .92, .80], amb: .95,  ac: [1, 1, 1],     moon: 0,   ex: 1.0, st: 0 },
+            { el: 50,  zen: [.09, .29, .86],    hor: [.50, .72, .97],    sun: 1.0, sc: [1, 1, 1],     amb: 1.0,  ac: [1, 1, 1],     moon: 0,   ex: 1.0, st: 0 }
+        ];
+        const skyS = { zen: new THREE.Color(), mid: new THREE.Color(), hor: new THREE.Color(), sc: new THREE.Color(), ac: new THREE.Color(), sun: 0, amb: 0, moon: 0, ex: 1, st: 0 };
+        function skySample(el) {
+            let i = 0; while (i < SKY_KEYS.length - 2 && el > SKY_KEYS[i + 1].el) i++;
+            const a = SKY_KEYS[i], b = SKY_KEYS[i + 1];
+            let t = THREE.MathUtils.clamp((el - a.el) / (b.el - a.el), 0, 1); t = t * t * (3 - 2 * t);
+            const L = (x, y) => x + (y - x) * t, C = (o, x, y) => o.setRGB(L(x[0], y[0]), L(x[1], y[1]), L(x[2], y[2]));
+            C(skyS.zen, a.zen, b.zen); C(skyS.hor, a.hor, b.hor); C(skyS.sc, a.sc, b.sc); C(skyS.ac, a.ac, b.ac);
+            skyS.mid.copy(skyS.hor).lerp(skyS.zen, 0.45);
+            skyS.sun = L(a.sun, b.sun); skyS.amb = L(a.amb, b.amb); skyS.moon = L(a.moon, b.moon); skyS.ex = L(a.ex, b.ex); skyS.st = L(a.st, b.st);
+        }
+        const skyDomeMat = new THREE.ShaderMaterial({
+            depthTest: false, depthWrite: false, side: THREE.BackSide, fog: false,
+            uniforms: {
+                uZen: { value: new THREE.Color() }, uMid: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uSunCol: { value: new THREE.Color(1, 1, 1) },
+                uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uMoonDir: { value: new THREE.Vector3(0, 1, 0) }, uStars: { value: 0 }, uGlow: { value: 1 }, uTime: { value: 0 }
+            },
+            vertexShader: 'varying vec3 vDir; void main() { vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+            fragmentShader: `
+                uniform vec3 uZen, uMid, uHor, uSunCol, uSunDir, uMoonDir; uniform float uStars, uGlow, uTime;
+                varying vec3 vDir;
+                float h13(vec3 p) { p = fract(p * 0.1031); p += dot(p, p.zyx + 31.32); return fract((p.x + p.y) * p.z); }
+                float starLayer(vec3 d, float scale, float dens, float size) {
+                    vec3 p = d * scale, i = floor(p), f = fract(p) - 0.5;
+                    float h = h13(i), on = step(dens, h);
+                    vec3 o = vec3(h13(i + 7.1), h13(i + 13.7), h13(i + 3.3)) - 0.5;
+                    float r = length(f - o * 0.5);
+                    float tw = 0.65 + 0.35 * sin(uTime * (1.5 + h * 4.0) + h * 60.0);
+                    return on * smoothstep(size, 0.0, r) * tw * (0.4 + 0.6 * fract(h * 37.0));
+                }
+                void main() {
+                    vec3 d = normalize(vDir);
+                    float t = max(d.y, 0.0);
+                    vec3 col = mix(uHor, uMid, smoothstep(0.0, 0.22, t));
+                    col = mix(col, uZen, smoothstep(0.12, 0.8, t));
+                    float sd = max(dot(d, uSunDir), 0.0);
+                    col += uHor * pow(1.0 - t, 6.0) * (0.15 + 0.9 * pow(sd, 2.0)) * uGlow;           // glowing horizon band, strongest toward the sun
+                    col += uSunCol * (pow(sd, 5.0) * 0.28 + pow(sd, 40.0) * 0.55) * uGlow;            // sun halo
+                    col += uSunCol * smoothstep(0.99955, 0.99985, sd) * 14.0 * uGlow * step(-0.02, d.y); // sun disc
+                    if (uStars > 0.001) {
+                        float s = starLayer(d, 160.0, 0.965, 0.30) + 0.6 * starLayer(d, 95.0, 0.975, 0.34);
+                        col += vec3(0.8, 0.88, 1.0) * s * uStars * smoothstep(0.0, 0.12, d.y) * 1.6;
+                        float md = dot(d, uMoonDir);
+                        col += vec3(0.85, 0.92, 1.0) * (smoothstep(0.99935, 0.9996, md) * 3.0 + pow(max(md, 0.0), 160.0) * 0.18) * uStars;
+                    }
+                    if (d.y < 0.0) col *= mix(1.0, 0.75, smoothstep(0.0, -0.3, d.y));
+                    col += (fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) / 200.0; // dither, no banding
+                    gl_FragColor = vec4(max(col, 0.0), 1.0);
+                    #include <tonemapping_fragment>
+                    #include <encodings_fragment>
+                }`
+        });
+        const skyDome = new THREE.Mesh(new THREE.SphereGeometry(4300, 32, 20), skyDomeMat);
+        skyDome.frustumCulled = false; skyDome.renderOrder = -100; skyDome.visible = false; scene.add(skyDome);
+        function setCustomSky(on, quiet) {
+            skyCustom = !!on; skyDome.visible = skyCustom;
+            if (skyCustom) { scene.background = new THREE.Color(0x000000); scene.environment = null; skyRt.init = false; }
+            else if (hdrSkyTex) { scene.background = hdrSkyTex; scene.environment = hdrSkyTex; }
+            else { scene.background = new THREE.Color(0x1e293b); scene.environment = null; }
+            if (!quiet) { applyEnvironment(); syncPmSky(); }
+        }
+        const skyTmpC = new THREE.Color(), skyTmpD = new THREE.Vector3();
+        function updateSky() {
+            const c = envConfig, now = performance.now(), dt = Math.min(0.1, Math.max(0, (now - (skyRt.last || now)) / 1000)); skyRt.last = now;
+            if (skyRt.fogStr !== c.fogColor) { fogUser.set(c.fogColor || '#ffffff'); skyRt.fogStr = c.fogColor; }
+            if (!skyCustom) { skyRt.sunAz = c.sunAzimuth; skyRt.sunEl = c.sunElevation; fogEff.copy(fogUser); return; }
+            if (!gamePaused && c.timeSpeed > 0) c.timeOfDay = (c.timeOfDay + c.timeSpeed * dt / 60) % 24;
+            if (!skyRt.init) { skyRt.hour = c.timeOfDay; skyRt.init = true; }
+            // glide to the chosen time along the shortest way round the clock (sunset -> night passes through dusk)
+            const diff = (((c.timeOfDay - skyRt.hour) % 24) + 36) % 24 - 12;
+            skyRt.hour = (skyRt.hour + diff * (1 - Math.exp(-dt * 2.5)) + 24) % 24;
+            const h = skyRt.hour, el = 60 * Math.sin(Math.PI * (h - 6) / 12);
+            skyRt.sunEl = el; skyRt.sunAz = c.sunAzimuth + THREE.MathUtils.clamp((h - 12) / 6, -1.6, 1.6) * 35;
+            skySample(el); const S = skyS;
+            ambientLight.intensity = c.ambientIntensity * S.amb; ambientLight.color.copy(S.ac).multiply(skyTmpC.set(c.ambientColor));
+            dirLight.intensity = c.sunIntensity * S.sun; dirLight.color.copy(S.sc).multiply(skyTmpC.set(c.sunColor));
+            moonLight.intensity = Math.max(c.moonIntensity, S.moon); moonLight.color.set(c.moonColor);
+            renderer.toneMappingExposure = c.baseBrightness * S.ex;
+            updateLightPositions();
+            const wDay = THREE.MathUtils.smoothstep(el, 4, 35);
+            fogEff.copy(S.hor).multiplyScalar(0.9).lerp(fogUser, wDay);
+            if (scene.fog) scene.fog.color.copy(fogEff);
+            const u = skyDomeMat.uniforms;
+            u.uZen.value.copy(S.zen); u.uMid.value.copy(S.mid); u.uHor.value.copy(S.hor); u.uSunCol.value.copy(S.sc).multiplyScalar(1.6);
+            const az = THREE.MathUtils.degToRad(skyRt.sunAz), e = THREE.MathUtils.degToRad(el);
+            u.uSunDir.value.set(Math.sin(az) * Math.cos(e), Math.sin(e), Math.cos(az) * Math.cos(e));
+            const maz = THREE.MathUtils.degToRad(c.moonAzimuth), mel = THREE.MathUtils.degToRad(c.moonElevation);
+            u.uMoonDir.value.set(Math.sin(maz) * Math.cos(mel), Math.sin(mel), Math.cos(maz) * Math.cos(mel));
+            u.uStars.value = S.st; u.uGlow.value = THREE.MathUtils.smoothstep(el, -12, -2); u.uTime.value = (now / 1000) % 1000;
+            camera.getWorldPosition(skyTmpD); skyDome.position.copy(skyTmpD);
+        }
 
         function ensurePostTargets(needDof) {
             const size = renderer.getDrawingBufferSize(new THREE.Vector2());
@@ -2665,7 +3132,7 @@ body.playing #mpHud.on { display: block; }
         }
 
         function renderFrame() {
-            updateClouds();
+            updateSky(); updateClouds(); updateFogDome(); updateHeadlights();
             const speedRatio = Math.min(1.5, Math.abs(currentSpeed * physics.masterSpeed) / 7.0);
             const blurAmount = envConfig.motionBlur ? envConfig.motionBlurStrength * 0.2 * speedRatio : 0;
             const useBlur = blurAmount > 0.0005;
@@ -2680,10 +3147,12 @@ body.playing #mpHud.on { display: block; }
                 const prevBg = scene.background, prevFog = scene.fog, prevAuto = renderer.shadowMap.autoUpdate;
                 const prevClear = new THREE.Color(); renderer.getClearColor(prevClear); const prevAlpha = renderer.getClearAlpha();
                 const cloudWasVisible = cloudMesh.visible; cloudMesh.visible = false;
+                const fogDomeWasVisible = fogDome.visible; fogDome.visible = false;
+                const skyDomeWasVisible = skyDome.visible; skyDome.visible = false; setFxVisible(false);
                 scene.background = null; scene.fog = null; scene.overrideMaterial = depthMaterial;
                 renderer.shadowMap.autoUpdate = false; renderer.setClearColor(0xffffff, 1);
                 renderer.setRenderTarget(depthTarget); renderer.render(scene, camera);
-                scene.overrideMaterial = null; cloudMesh.visible = cloudWasVisible; scene.background = prevBg; scene.fog = prevFog; renderer.shadowMap.autoUpdate = prevAuto;
+                scene.overrideMaterial = null; cloudMesh.visible = cloudWasVisible; fogDome.visible = fogDomeWasVisible; skyDome.visible = skyDomeWasVisible; setFxVisible(true); scene.background = prevBg; scene.fog = prevFog; renderer.shadowMap.autoUpdate = prevAuto;
                 renderer.setClearColor(prevClear, prevAlpha);
 
                 const u = dofMaterial.uniforms;
@@ -2975,6 +3444,13 @@ body.playing #mpHud.on { display: block; }
         });
 
         let currentSpeed = 0, carAngle = 0, currentSteerAngle = 0;
+        const turnCamState = { prev: null, roll: 0, yaw: 0 };
+        ['rollInvert', 'yawInvert'].forEach(k => {
+            const cb = document.getElementById(k);
+            if (!cb) return;
+            cb.checked = !!physics[k];
+            cb.addEventListener('change', () => { physics[k] = cb.checked ? 1 : 0; updateJsonBoxes(); });
+        });
         const gearThresholdsKph = [110, 165, 200, 225, 245, 249, 250];
 
         function triggerCrashReset() {
@@ -2999,6 +3475,7 @@ body.playing #mpHud.on { display: block; }
             if (n > 0 && n % 10 === 0 && n > prev) { carHudNum.classList.remove('pop'); void carHudNum.offsetWidth; carHudNum.classList.add('pop'); }
         }
 
+        let shakeShown = 0;
         function animateBody() {
 
             const effectiveAccel = physics.accel * (1000 / physics.weight);
@@ -3039,6 +3516,15 @@ body.playing #mpHud.on { display: block; }
             }
 
             carContainer.rotation.y = carAngle;
+            {
+                // shake grows like before but is capped at what it was at 162 kph (that is now the maximum)
+                const shSpd = Math.min(Math.abs(currentSpeed), 162 * 7.0 / 280);
+                const shFt = THREE.MathUtils.smoothstep(shSpd / Math.max(0.01, physics.topSpeed), 0.45, 1.0);
+                shakeShown += (shFt - shakeShown) * 0.12; // eased so it never jumps
+                const shA = (physics.carShake || 0) * shakeShown, shT = performance.now() * 0.001;
+                carContainer.rotation.x = shA * 0.0075 * (Math.sin(shT * 173) + 0.6 * Math.sin(shT * 291 + 1.3));
+                carContainer.rotation.z = shA * 0.0100 * (Math.sin(shT * 151 + 0.7) + 0.6 * Math.sin(shT * 263 + 2.1));
+            }
             carContainer.position.x += Math.sin(carAngle) * currentSpeed * physics.masterSpeed;
             carContainer.position.z += Math.cos(carAngle) * currentSpeed * physics.masterSpeed;
             carContainer.position.y = physics.carY;
@@ -3119,9 +3605,19 @@ body.playing #mpHud.on { display: block; }
                     camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
                 }
                 camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
-                camera.rotateY(THREE.MathUtils.degToRad(physics.camRotY));
+                let tcDelta = (turnCamState.prev === null) ? 0 : carAngle - turnCamState.prev;
+                turnCamState.prev = carAngle;
+                if (!isFinite(tcDelta) || Math.abs(tcDelta) > 0.5) tcDelta = 0;
+                const tcDeg = THREE.MathUtils.radToDeg(tcDelta);
+                const tcRollMax = Math.abs(physics.rollMax), tcYawMax = Math.abs(physics.yawMax);
+                const tcRollT = THREE.MathUtils.clamp(tcDeg * physics.rollFactor * (physics.rollInvert ? -1 : 1), -tcRollMax, tcRollMax);
+                const tcYawT = THREE.MathUtils.clamp(tcDeg * physics.yawFactor * (physics.yawInvert ? -1 : 1), -tcYawMax, tcYawMax);
+                const tcS = THREE.MathUtils.clamp(physics.rollSmooth, 0.01, 1);
+                turnCamState.roll += (tcRollT - turnCamState.roll) * tcS;
+                turnCamState.yaw += (tcYawT - turnCamState.yaw) * tcS;
+                camera.rotateY(THREE.MathUtils.degToRad(physics.camRotY + turnCamState.yaw));
                 camera.rotateX(THREE.MathUtils.degToRad(physics.camRotX));
-                camera.rotateZ(THREE.MathUtils.degToRad(physics.camRotZ));
+                camera.rotateZ(THREE.MathUtils.degToRad(physics.camRotZ + turnCamState.roll));
             } else {
                 const moveSpeed = keys.shift ? 1.5 : 0.5;
                 const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), freeCamRot.y);
@@ -3141,7 +3637,9 @@ body.playing #mpHud.on { display: block; }
             }
 
             carModelGroup.visible = false; aiGroup.visible = false; remoteGroup.visible = false;
-            cubeCamera.position.copy(carContainer.position); cubeCamera.update(renderer, scene);
+            const prV = playerRig.visible; playerRig.visible = false;
+            hwReflCapture(false); cubeCamera.position.copy(carContainer.position); cubeCamera.update(renderer, scene); hwReflCapture(true);
+            playerRig.visible = prV;
             carModelGroup.visible = true; aiGroup.visible = true; remoteGroup.visible = true;
 
             hudScoreEl.textContent = `CARS PASSED: ${carsPassedCount}`; updateCarHud(carsPassedCount); drawSpeedo(calculatedKph, currentGear);
@@ -3504,12 +4002,14 @@ body.playing #mpHud.on { display: block; }
             thumbQ.length = 0;
             if (!selCar && lib.cars.length) selCar = lib.cars[0];
             if (!selSky && lib.skies.length) selSky = lib.skies[0];
+            if (!selSky && !lib.skies.length) selSky = CUSTOM_SKY;
             if (!selMap && lib.maps.length) selMap = lib.maps[0];
+            { const cc = makeCard('Custom Sky (Time of Day)', selSky === CUSTOM_SKY, () => { selSky = CUSTOM_SKY; }); cc.th.textContent = ''; cc.th.style.background = 'linear-gradient(180deg,#3b1f78 0%,#b8478c 48%,#ff8a3d 80%,#ffd08a 100%)'; skyGrid.appendChild(cc.el); }
             lib.skies.forEach(f => { const c = makeCard(f.name, f === selSky, () => { selSky = f; }); skyGrid.appendChild(c.el); queueThumb('sky', f, c.th); });
             lib.cars.forEach(f => { const c = makeCard(f.name, f === selCar, () => { selCar = f; }); carGrid.appendChild(c.el); queueThumb('car', f, c.th); });
             lib.maps.forEach(f => { const c = makeCard(f.name, f === selMap, () => { selMap = f; }); c.th.remove(); mapList.appendChild(c.el); });
             if (!lib.cars.length) carGrid.textContent = 'No car models found, the default box car will be used.';
-            if (!lib.skies.length) skyGrid.textContent = 'No .hdr / .exr files found, the default sky will be used.';
+            if (!lib.skies.length) skyGrid.appendChild(document.createTextNode('No .hdr / .exr files found, use the custom sky.'));
             if (!lib.maps.length) mapList.textContent = 'No files with "HIGHWAY" in the name found.';
         }
 
@@ -3560,10 +4060,15 @@ body.playing #mpHud.on { display: block; }
                     waveShaper.curve = makeDistortionCurve(physics.soundSharpness);
                 }
 
-                if (selSky) {
-                    say('Loading sky: ' + selSky.name);
-                    try { const t = await loadSkyTexture(selSky); t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; }
-                    catch (err) { say('  sky failed to load'); }
+                hdrSkyTex = null;
+                if (selSky && selSky.custom) { say('Custom sky (time of day)'); setCustomSky(true, true); }
+                else {
+                    if (selSky) {
+                        say('Loading sky: ' + selSky.name);
+                        try { const t = await loadSkyTexture(selSky); t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; }
+                        catch (err) { say('  sky failed to load'); }
+                    }
+                    setCustomSky(false, true);
                 }
                 if (selMap) {
                     say('Loading map: ' + selMap.name);
@@ -3595,7 +4100,7 @@ body.playing #mpHud.on { display: block; }
             carsPassedCount = 0; currentSpeed = 0; carAngle = 0;
             carContainer.position.set(0, physics.carY, mpSpawnZ());
             rebuildBuildings();
-            updateCarTransform(); applyEnvIntensity(); applyEnvironment();
+            prefsApplyPlate(); prefsApplyWeather(); syncEnvUI(); updateCarTransform(); applyEnvIntensity(); applyEnvironment(); refreshPlates(); updateEnvJson();
             document.body.classList.add('playing');
             $m('menuRoot').classList.add('hidden');
             setPauseState('none'); gameStarted = true;
@@ -3609,14 +4114,14 @@ body.playing #mpHud.on { display: block; }
             $m('pauseMenu').classList.toggle('open', st === 'menu');
             $m('ui-panel').classList.toggle('open', st === 'options');
             if (gamePaused) Object.keys(keys).forEach(k => { keys[k] = false; });
-            if (st === 'menu') { syncPlateInputs(); syncPmClouds(); }
+            if (st === 'menu') { syncPlateInputs(); syncPmClouds(); syncPmWeather(); syncPmSky(); }
         }
         function syncPlateInputs() {
             const c = getPlayerPlateCfg();
             $m('pmPlateText').value = c.plateText || '';
             $m('pmPlateOn').value = c.plateOn ? '1' : '0';
         }
-        function plateChanged() { refreshPlates(); updateTrafficJson(); updatePlayerPlateJson(); renderTrafficList(); }
+        function plateChanged() { refreshPlates(); updateTrafficJson(); updatePlayerPlateJson(); renderTrafficList(); prefsSavePlate(); }
         $m('pmPlateText').addEventListener('input', e => { getPlayerPlateCfg().plateText = e.target.value; plateChanged(); });
         $m('pmPlateOn').addEventListener('change', e => { getPlayerPlateCfg().plateOn = parseInt(e.target.value); plateChanged(); });
         $m('pmPlateRandom').addEventListener('click', () => { const t = randomPlateText(); getPlayerPlateCfg().plateText = t; $m('pmPlateText').value = t; plateChanged(); });
@@ -3628,6 +4133,7 @@ body.playing #mpHud.on { display: block; }
             currentSpeed = 0; carAngle = 0; carsPassedCount = 0;
             Object.assign(physics, defaultPhysics);
             scene.background = new THREE.Color(0x1e293b); scene.environment = null;
+            hdrSkyTex = null; setCustomSky(false, true);
             baseHighwaySource = null; baseHighwayParts = null; highwayPropGroup.clear(); disposeBuildings();
             carModelGroup.clear(); carModelGroup.add(carBody); carModelGroup.add(carRoof);
             playerCarName = '';
@@ -3658,13 +4164,107 @@ body.playing #mpHud.on { display: block; }
                     envConfig[k] = v; r.value = v; if (n !== ev.target) n.value = v;
                     const d = document.getElementById(k), dn = document.getElementById('num-' + k);
                     if (d) d.value = v; if (dn) dn.value = v;
-                    updateEnvJson();
+                    updateEnvJson(); prefsSaveWeather();
                 };
                 r.addEventListener('input', on); n.addEventListener('input', on);
             });
         })();
         function syncPmClouds() {
             pmCloudDefs.forEach(([k]) => { $m('pm-' + k).value = envConfig[k]; $m('pmn-' + k).value = envConfig[k]; });
+        }
+
+        var pmWeatherDefs = [
+            ['highwayReflection', 'Road Reflection (0 = off)', 0, 1, 0.01],
+            ['highwayBlur', 'Road Reflection Blur', 0, 1, 0.01],
+            ['fogDensity', 'Fog Amount (0 = no fog)', 0, 0.01, 0.0001],
+            ['carReflectance', 'Car Reflectance (0 matte, 1 mirror, 3 ultra)', 0, 3, 0.01]
+        ];
+        (function buildPmWeather() {
+            const numCss = 'width:62px;padding:8px;border-radius:8px;border:2px solid #fff;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:13px;box-sizing:border-box;font-family:inherit';
+            let html = pmWeatherDefs.map(([k, label, mn, mx, st]) =>
+                '<div style="font-size:11px;opacity:.85;margin-top:4px">' + label + '</div>' +
+                '<div class="plrow" style="align-items:center">' +
+                '<input type="range" id="pm-' + k + '" min="' + mn + '" max="' + mx + '" step="' + st + '" value="' + envConfig[k] + '" style="flex:1;min-width:0;accent-color:#fff">' +
+                '<input type="number" id="pmn-' + k + '" step="' + st + '" value="' + envConfig[k] + '" style="' + numCss + '"></div>'
+            ).join('');
+            html += '<div style="font-size:11px;opacity:.85;margin-top:4px">Fog Color</div>' +
+                '<div class="plrow"><input type="color" id="pm-fogColor" value="' + envConfig.fogColor + '" style="width:100%;height:36px;border:2px solid #fff;border-radius:8px;background:transparent;padding:2px;box-sizing:border-box"></div>';
+            $m('pmWeather').innerHTML = html;
+            const after = k => {
+                if (k === 'highwayReflection' || k === 'highwayBlur') applyHighwayLook();
+                if (k === 'fogDensity' || k === 'fogColor') applyFogLook();
+                if (k === 'carReflectance') { applyCarReflectance(); applyEnvIntensity(); }
+                updateEnvJson(); prefsSaveWeather();
+            };
+            pmWeatherDefs.forEach(([k]) => {
+                const r = $m('pm-' + k), n = $m('pmn-' + k);
+                const on = ev => {
+                    const v = parseFloat(ev.target.value); if (isNaN(v)) return;
+                    envConfig[k] = v; r.value = v; if (n !== ev.target) n.value = v;
+                    const d = document.getElementById(k), dn = document.getElementById('num-' + k);
+                    if (d) d.value = v; if (dn) dn.value = v;
+                    after(k);
+                };
+                r.addEventListener('input', on); n.addEventListener('input', on);
+            });
+            $m('pm-fogColor').addEventListener('input', ev => {
+                envConfig.fogColor = ev.target.value;
+                const d = document.getElementById('fogColor'); if (d) d.value = ev.target.value;
+                after('fogColor');
+            });
+        })();
+        function syncPmWeather() {
+            pmWeatherDefs.forEach(([k]) => { $m('pm-' + k).value = envConfig[k]; $m('pmn-' + k).value = envConfig[k]; });
+            $m('pm-fogColor').value = envConfig.fogColor;
+        }
+
+
+
+        // ---- pause menu: sky / time of day + headlights ----
+        const PM_NUM_CSS = 'width:62px;padding:8px;border-radius:8px;border:2px solid #fff;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:13px;box-sizing:border-box;font-family:inherit';
+        function pmSliderHtml(k, label, mn, mx, st) {
+            return '<div style="font-size:11px;opacity:.85;margin-top:4px">' + label + '</div><div class="plrow" style="align-items:center">' +
+                '<input type="range" id="pm-' + k + '" min="' + mn + '" max="' + mx + '" step="' + st + '" value="' + envConfig[k] + '" style="flex:1;min-width:0;accent-color:#fff">' +
+                '<input type="number" id="pmn-' + k + '" step="' + st + '" value="' + envConfig[k] + '" style="' + PM_NUM_CSS + '"></div>';
+        }
+        function pmBindSlider(k, after) {
+            const r = $m('pm-' + k), n = $m('pmn-' + k);
+            const on = ev => {
+                const v = parseFloat(ev.target.value); if (isNaN(v)) return;
+                envConfig[k] = v; r.value = v; if (n !== ev.target) n.value = v;
+                updateEnvJson(); prefsSaveWeather(); if (after) after(v);
+            };
+            r.addEventListener('input', on); n.addEventListener('input', on);
+        }
+        function fmtHour(h) { h = ((h % 24) + 24) % 24; const hh = Math.floor(h), mm = Math.floor((h - hh) * 60); return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm; }
+        (function buildPmSky() {
+            const presets = [['Sunrise', 6], ['Morning', 8.5], ['Noon', 12], ['Sunset', 18], ['Night', 0]];
+            $m('pmSky').innerHTML =
+                '<div style="font-size:11px;opacity:.85;margin-top:4px">Sky</div>' +
+                '<div class="plrow"><select id="pmSkyMode" style="flex:1"><option value="custom">Custom Sky (time of day)</option><option value="hdr">Uploaded HDR sky</option></select></div>' +
+                '<div id="pmTimeBox">' + pmSliderHtml('timeOfDay', 'Time of Day <b id="pmTimeFmt"></b>', 0, 24, 0.05) +
+                '<div class="plrow" style="flex-wrap:wrap;margin-top:6px">' + presets.map(p => '<button class="mbtn" data-h="' + p[1] + '" style="flex:1 1 30%;padding:8px 4px;font-size:11px">' + p[0].toUpperCase() + '</button>').join('') + '</div>' +
+                pmSliderHtml('timeSpeed', 'Time Flow (game hours per minute, 0 = frozen)', 0, 60, 0.5) + '</div>';
+            $m('pmSkyMode').addEventListener('change', e => setCustomSky(e.target.value === 'custom'));
+            pmBindSlider('timeOfDay', v => { $m('pmTimeFmt').textContent = fmtHour(v); });
+            pmBindSlider('timeSpeed');
+            $m('pmSky').querySelectorAll('button[data-h]').forEach(b => b.addEventListener('click', () => {
+                const v = parseFloat(b.dataset.h); envConfig.timeOfDay = v; $m('pm-timeOfDay').value = v; $m('pmn-timeOfDay').value = v;
+                $m('pmTimeFmt').textContent = fmtHour(v); updateEnvJson(); prefsSaveWeather();
+            }));
+            $m('pmLights').innerHTML =
+                '<div class="plrow"><select id="pmHlMode" style="flex:1"><option value="0">Headlights Off</option><option value="1">Headlights On (all cars)</option><option value="2">Auto (on at night)</option></select></div>' +
+                pmSliderHtml('headlightBrightness', 'Headlight Brightness', 0, 4, 0.05);
+            $m('pmHlMode').addEventListener('change', e => { envConfig.headlightMode = parseInt(e.target.value); updateEnvJson(); prefsSaveWeather(); });
+            pmBindSlider('headlightBrightness');
+        })();
+        function syncPmSky() {
+            $m('pmSkyMode').value = skyCustom ? 'custom' : 'hdr';
+            $m('pmSkyMode').querySelector('option[value="hdr"]').disabled = !hdrSkyTex;
+            ['timeOfDay', 'timeSpeed', 'headlightBrightness'].forEach(k => { $m('pm-' + k).value = envConfig[k]; $m('pmn-' + k).value = envConfig[k]; });
+            $m('pmTimeFmt').textContent = fmtHour(envConfig.timeOfDay);
+            $m('pmHlMode').value = String(Math.round(envConfig.headlightMode));
+            $m('pmTimeBox').style.opacity = skyCustom ? '1' : '0.45';
         }
 
         // ---- DEBUG MODE (password protected, stays unlocked until the page is reloaded) ----
@@ -3826,7 +4426,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
                         ch.material = Array.isArray(ch.material) ? ch.material.map(mk) : mk(ch.material);
                     }
                 });
-                r.mg.clear(); r.mg.add(m); mpRemoteTransform(r); applyEnvIntensity();
+                r.mg.clear(); r.mg.add(m); mpRemoteTransform(r); applyCarReflectance(); applyEnvIntensity();
             } catch (e) {}
         }
         function mpUpsertRemote(id, info) {
@@ -3834,6 +4434,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (!r) {
                 r = { id: id, car: null, pt: '', po: 1, cfg: null, root: new THREE.Group(), mg: new THREE.Group(), pg: new THREE.Group(), plate: makePlateMesh(), tx: 0, tz: 0, ta: 0, tv: 0, vx: 0, vz: 0, tRecv: performance.now(), cp: 0, init: false };
                 r.root.add(r.mg); r.root.add(r.pg); r.pg.add(r.plate); r.root.visible = false;
+                { const rg = makeHeadlightRig(0.66, 1.75, 0.7, -1.75); r.root.add(rg); r.root.userData.hl = rg; }
                 remoteGroup.add(r.root); mp.remotes.set(id, r); plateChanged = true;
             }
             if (info.pt !== undefined && info.pt !== r.pt) { r.pt = mpStr(info.pt); plateChanged = true; }
@@ -3856,6 +4457,10 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             }
             r.tx = nx; r.tz = nz; r.ta = mpNum(p.a); r.tv = mpNum(p.v); r.cp = mpNum(p.cp) | 0;
             if (!r.init || tRecv > r.tRecv) r.tRecv = tRecv;
+            if (!r.buf) r.buf = [];
+            const lastSnap = r.buf[r.buf.length - 1];
+            if (lastSnap && Math.hypot(nx - lastSnap.x, nz - lastSnap.z) > 60) { r.buf.length = 0; r.snap = true; } // teleport / reset: snap instead of gliding
+            if (!r.buf.length || tRecv > r.buf[r.buf.length - 1].t) { r.buf.push({ t: tRecv, x: nx, z: nz, a: r.ta }); if (r.buf.length > 16) r.buf.shift(); }
             if (!r.init) { r.init = true; r.root.position.set(r.tx, physics.carY, r.tz); r.root.rotation.y = r.ta; r.root.visible = true; }
         }
 
@@ -3864,15 +4469,32 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (!mpRole) return;
             if (mpRole === 'host' && mp.trafficOn) mp.S += 1; // one tick per host game frame
             const now = performance.now();
+            const mpDt = Math.min(0.1, Math.max(0.001, (now - (mp.lastFT || now)) / 1000)); mp.lastFT = now;
             mp.remotes.forEach(r => {
                 if (!r.init) return;
-                const age = Math.min(250, (now - r.tRecv) + mp.rtt * 0.5);
-                const ex = r.tx + r.vx * age, ez = r.tz + r.vz * age;
-                r.root.position.x += (ex - r.root.position.x) * 0.3;
-                r.root.position.z += (ez - r.root.position.z) * 0.3;
+                // draw the car ~110 ms in the past and interpolate between the two network snapshots around that moment
+                const b = r.buf;
+                let tx = r.tx, tz = r.tz, ta = r.ta;
+                if (b && b.length) {
+                    const rt = now - 110, L = b[b.length - 1];
+                    if (rt <= b[0].t) { tx = b[0].x; tz = b[0].z; ta = b[0].a; }
+                    else if (rt >= L.t) { const ext = Math.min(150, rt - L.t); tx = L.x + r.vx * ext; tz = L.z + r.vz * ext; ta = L.a; }
+                    else {
+                        let i = 0; while (i < b.length - 2 && b[i + 1].t < rt) i++;
+                        const A = b[i], B = b[i + 1], f = (rt - A.t) / Math.max(1, B.t - A.t);
+                        tx = A.x + (B.x - A.x) * f; tz = A.z + (B.z - A.z) * f;
+                        let dd = B.a - A.a; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); ta = A.a + dd * f;
+                    }
+                }
+                if (r.snap) { r.root.position.set(tx, physics.carY, tz); r.root.rotation.y = ta; r.snap = false; }
+                else {
+                    const k = 1 - Math.exp(-mpDt * 30);
+                    r.root.position.x += (tx - r.root.position.x) * k;
+                    r.root.position.z += (tz - r.root.position.z) * k;
+                    let da = ta - r.root.rotation.y; da = Math.atan2(Math.sin(da), Math.cos(da));
+                    r.root.rotation.y += da * k;
+                }
                 r.root.position.y = physics.carY;
-                let da = r.ta - r.root.rotation.y; da = Math.atan2(Math.sin(da), Math.cos(da));
-                r.root.rotation.y += da * 0.3;
             });
             if (now - mp.hudT > 250) { mp.hudT = now; mpHudRender(); }
         }
@@ -4005,7 +4627,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (m.t === 'welcome') {
                 clearTimeout(mp.joinTimer);
                 mp.id = m.id; mpSlot = m.slot | 0; mp.code = code; mpHostCar = String(m.car || ''); mpRole = 'guest'; mpPending = 'guest';
-                const hs = lib.skies.find(f => f.name === m.sky), hm = lib.maps.find(x => x.key === m.map);
+                const hs = (m.sky === '__custom__') ? CUSTOM_SKY : lib.skies.find(f => f.name === m.sky), hm = lib.maps.find(x => x.key === m.map);
                 selSky = hs || null; selMap = hm || null;
                 buildSelectScreen(); mpPrepareSelect('guest'); showScreen('screenSelect');
                 if ((m.sky && !hs) || (m.map && !hm)) mpToast('Some of the host\'s files are missing here, a default will be used.');
