@@ -26,6 +26,13 @@
   "camRotX": 0,
   "camRotY": 0,
   "camRotZ": 0,
+  "rollMax": 6.5,
+  "rollFactor": 3,
+  "rollInvert": 0,
+  "rollSmooth": 0.15,
+  "yawMax": 7,
+  "yawFactor": 4,
+  "yawInvert": 0,
   "rotX": 0,
   "rotY": 0,
   "rotZ": 0
