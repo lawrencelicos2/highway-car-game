@@ -16,6 +16,7 @@
   "soundSharpness": 1,
   "carScale": 6.5,
   "shininess": 92.65,
+  "carShake": 1,
   "fov": 81,
   "zoom": 30,
   "speedZoomFactor": 0.1,
@@ -35,5 +36,18 @@
   "yawInvert": 0,
   "rotX": 0,
   "rotY": 0,
-  "rotZ": 0
+  "rotZ": 0,
+  "walls": {
+    "enabled": 1,
+    "dist": 44,
+    "offX": 0,
+    "offY": 0,
+    "height": 6,
+    "thick": 2,
+    "seg": 40,
+    "yaw": 0,
+    "tilt": 0,
+    "friction": 0.02,
+    "pad": 0
+  }
 }
