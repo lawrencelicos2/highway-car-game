@@ -1,0 +1,3329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimized Sandbox & Infinite Highway Prop Studio</title>
+    <style>
+        :root {
+            --bg: #1e293b;
+            --panel: rgba(255, 255, 255, 0.92);
+            --accent: #2563eb;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text);
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 395px;
+            background: var(--panel);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            z-index: 10;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            max-height: 92vh;
+            overflow-y: auto;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            color: #2563eb;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 5px;
+        }
+        .control-group {
+            margin-bottom: 8px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            margin-bottom: 2px;
+            color: #64748b;
+        }
+        .input-pair {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+        input[type="number"] {
+            width: 65px;
+            padding: 3px 5px;
+            font-size: 11px;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: #f8fafc;
+            color: #0f172a;
+            text-align: right;
+        }
+        select {
+            width: 100%;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .json-section {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+        textarea {
+            width: 100%;
+            height: 55px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 6px;
+            box-sizing: border-box;
+            resize: none;
+            color: #334155;
+        }
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 5px;
+        }
+        button, .upload-btn {
+            display: block;
+            width: 100%;
+            background: #2563eb;
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
+            padding: 7px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+        button:hover, .upload-btn:hover {
+            background: #1d4ed8;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        #hud {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 12px 18px;
+            border-radius: 10px;
+            z-index: 10;
+            font-family: monospace;
+            pointer-events: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        #hud div {
+            font-size: 13px;
+            margin: 2px 0;
+            color: #2563eb;
+        }
+        .pattern-grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            background: #e2e8f0;
+            padding: 6px;
+            border-radius: 6px;
+            margin-top: 4px;
+        }
+        .pattern-cell {
+            background: #f1f5f9;
+            border: 2px solid #cbd5e1;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #64748b;
+            transition: all 0.1s;
+        }
+        .pattern-cell.active {
+            background: #2563eb;
+            border-color: #1d4ed8;
+            color: #ffffff;
+        }
+        input[type="color"] {
+            width: 100%;
+            height: 26px;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: #f8fafc;
+            cursor: pointer;
+        }
+        .traffic-head-btns {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        button.traffic-edit {
+            width: auto;
+            margin: 0;
+            padding: 2px 8px;
+            background: #0ea5e9;
+            border-color: #0284c7;
+        }
+        button.traffic-edit.active {
+            background: #16a34a;
+            border-color: #15803d;
+        }
+        .traffic-fields.hb {
+            grid-template-columns: repeat(3, 1fr);
+            margin-top: 6px;
+        }
+        .traffic-hb-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-top: 6px;
+        }
+        .traffic-item {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px;
+            margin-top: 5px;
+        }
+        .traffic-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .traffic-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #0f172a;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .traffic-pending {
+            color: #d97706;
+            font-weight: normal;
+        }
+        .traffic-fields {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+        }
+        .traffic-fields span {
+            display: block;
+            font-size: 10px;
+            color: #64748b;
+        }
+        .traffic-fields input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        button.traffic-remove {
+            width: auto;
+            margin: 0;
+            padding: 2px 8px;
+            background: #dc2626;
+            border-color: #b91c1c;
+            flex-shrink: 0;
+        }
+        button.traffic-remove:hover {
+            background: #b91c1c;
+        }
+    
+input[type="text"].plate-text{width:100%;box-sizing:border-box;padding:3px 5px;font-size:11px;font-weight:bold;border:1px solid var(--border);border-radius:4px;background:#f8fafc;color:#0f172a;}
+.traffic-fields.pl{grid-template-columns:repeat(3,1fr);margin-top:6px;}
+.traffic-pl-title{font-size:10px;font-weight:bold;color:#2563eb;margin-top:6px;}
+#speedo{position:absolute;left:20px;top:calc(100vh - 330px);width:170px;height:170px;z-index:11;cursor:grab;touch-action:none;user-select:none;filter:drop-shadow(0 8px 16px rgba(0,0,0,.45));}
+#hud{display:none;} body.playing #hud{display:block;}
+#speedo{display:none;} body.playing #speedo{display:block;}
+#ui-panel{display:none;} #ui-panel.open{display:block;}
+#menuRoot{position:fixed;inset:0;z-index:50;background:radial-gradient(circle at 50% 25%,#1e3a8a 0%,#0f172a 70%);color:#e2e8f0;overflow:auto;user-select:none;}
+#menuRoot.hidden{display:none;}
+.screen{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;box-sizing:border-box;}
+.screen.hidden{display:none;}
+.mtitle{font-size:44px;font-weight:900;letter-spacing:4px;color:#fff;text-shadow:0 4px 24px rgba(37,99,235,.7);text-align:center;}
+.mtitle.small{font-size:26px;}
+.msub,.mnote{font-size:13px;color:#94a3b8;text-align:center;max-width:560px;white-space:pre-line;line-height:1.5;}
+button.mbtn,label.mbtn{display:inline-block;width:auto;margin:0;padding:12px 28px;font-size:14px;letter-spacing:1px;border-radius:10px;background:#2563eb;color:#fff;border:1px solid #1d4ed8;font-weight:800;cursor:pointer;text-align:center;}
+button.mbtn:hover,label.mbtn:hover{background:#1d4ed8;}
+button.mbtn.big{font-size:20px;padding:16px 56px;}
+button.mbtn.ghost{background:transparent;border-color:#475569;color:#cbd5e1;}
+button.mbtn:disabled{background:#475569;border-color:#475569;cursor:default;}
+.selwrap{display:flex;gap:16px;width:100%;max-width:1200px;align-items:flex-start;flex-wrap:wrap;justify-content:center;}
+.selcol{flex:1 1 320px;background:rgba(15,23,42,.75);border:1px solid #334155;border-radius:12px;padding:12px;max-height:58vh;overflow:auto;box-sizing:border-box;}
+.selcol h3{margin:0 0 8px;font-size:12px;letter-spacing:2px;color:#60a5fa;}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;}
+.mcard{border:2px solid #334155;border-radius:8px;overflow:hidden;cursor:pointer;background:#0f172a;font-size:11px;font-weight:700;color:#cbd5e1;}
+.mcard:hover{border-color:#64748b;}
+.mcard.sel{border-color:#3b82f6;box-shadow:0 0 0 2px rgba(59,130,246,.5);}
+.mcard .thumb{width:100%;aspect-ratio:16/10;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:10px;}
+.mcard .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.mcard .cname{padding:5px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mlist{display:flex;flex-direction:column;gap:6px;}
+.mlist .mcard .cname{padding:10px;font-size:12px;}
+.mrow{display:flex;gap:12px;}
+#pauseMenu{display:none;position:fixed;inset:0;z-index:40;background:rgba(2,6,23,.62);backdrop-filter:blur(6px);align-items:center;justify-content:center;user-select:none;}
+#pauseMenu.open{display:flex;}
+.pbox{display:flex;flex-direction:column;gap:12px;width:300px;background:rgba(15,23,42,.94);border:1px solid #334155;border-radius:14px;padding:24px;box-sizing:border-box;color:#e2e8f0;}
+.pbox .mtitle{margin-bottom:4px;}
+.pbox button.mbtn{width:100%;}
+.pbox button.mbtn.big{font-size:18px;padding:14px;}
+.pltitle{font-size:11px;letter-spacing:2px;color:#60a5fa;margin-top:8px;}
+.plrow{display:flex;gap:6px;}
+.plrow input[type=text],.plrow select{flex:1;min-width:0;padding:9px;border-radius:8px;border:1px solid #475569;background:#0f172a;color:#fff;font-weight:700;font-size:13px;box-sizing:border-box;}
+.plrow select{flex:0 0 76px;}
+.pbox .plrow button.mbtn{width:auto;padding:9px 12px;font-size:11px;}
+body,button,input,select{font-family:'Roboto',-apple-system,'Segoe UI',sans-serif;}
+#menuRoot,#menuRoot *,#pauseMenu,#pauseMenu *{font-family:'Roboto',-apple-system,'Segoe UI',sans-serif;color:#fff;}
+#menuRoot{background-size:cover;background-position:center;}
+.mtitle{text-shadow:0 2px 18px rgba(0,0,0,.65);}
+.msub,.mnote,.selcol h3,.pltitle{color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.7);}
+button.mbtn,label.mbtn{background:rgba(255,255,255,.1);border:2px solid #fff;color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);}
+button.mbtn:hover,label.mbtn:hover{background:rgba(255,255,255,.24);}
+button.mbtn.ghost{background:rgba(255,255,255,.06);border-color:#fff;color:#fff;}
+button.mbtn:disabled{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.5);}
+.selcol,.pbox{background:rgba(15,23,42,.35);border:2px solid #fff;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);}
+#pauseMenu{background:rgba(2,6,23,.35);}
+.mcard{background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;}
+.mcard:hover{border-color:#fff;}
+.mcard.sel{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.45);}
+.mcard .thumb{background:rgba(0,0,0,.25);}
+.plrow input[type=text],.plrow select{background:rgba(255,255,255,.1);border:2px solid #fff;color:#fff;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.plrow input::placeholder{color:rgba(255,255,255,.65);}
+.plrow select option{color:#0f172a;}
+#speedo.dragging{cursor:grabbing;}
+#speedo canvas{width:100%;height:100%;display:block;pointer-events:none;}
+/* ---- v3 look ---- */
+html body *, html body textarea, html body input, html body select, html body button { font-family: 'Roboto', sans-serif; }
+#hud { display: none !important; }
+#speedo { border-radius: 50%; background: rgba(0,0,0,.42); -webkit-backdrop-filter: blur(16px) saturate(1.2); backdrop-filter: blur(16px) saturate(1.2); border: 1px solid rgba(255,255,255,.2); box-shadow: 0 10px 30px rgba(0,0,0,.45); filter: none; }
+#carHud { display: none; position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 12; padding: 8px 28px 10px; border-radius: 18px; background: rgba(0,0,0,.38); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.18); text-align: center; pointer-events: none; user-select: none; }
+body.playing #carHud { display: block; }
+#carHudNum { font-size: 44px; font-weight: 900; line-height: 1; letter-spacing: 1px; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.5); transition: color .25s; }
+#carHudLabel { font-size: 11px; font-weight: 700; letter-spacing: 3px; color: rgba(255,255,255,.7); margin-top: 5px; }
+#carHud.c-yellow #carHudNum { color: #facc15; text-shadow: 0 0 18px rgba(250,204,21,.55); }
+#carHud.c-red #carHudNum { color: #ef4444; text-shadow: 0 0 18px rgba(239,68,68,.6); }
+#carHud.c-purple #carHudNum { color: #a855f7; text-shadow: 0 0 20px rgba(168,85,247,.7); }
+@keyframes carHudPop { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 100% { transform: scale(1); } }
+#carHudNum.pop { animation: carHudPop .5s ease-out; }
+#dbgModal { display: none; position: absolute; inset: 0; z-index: 2; align-items: center; justify-content: center; background: rgba(2,6,23,.55); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+#dbgModal.open { display: flex; }
+#dbgPass { width: 100%; padding: 11px; border-radius: 8px; border: 2px solid #fff; background: rgba(255,255,255,.1); font-size: 16px; font-weight: 700; letter-spacing: 4px; text-align: center; box-sizing: border-box; outline: none; }
+#dbgMsg { min-height: 16px; font-size: 12px; text-align: center; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="menuRoot">
+        <div class="screen" id="screenBoot">
+            <div class="mtitle">HIGHWAY SANDBOX</div>
+            <div class="msub" id="bootMsg">Looking for game files on this site...</div>
+            <div class="msub" id="bootManual" style="display:none">Game files weren't found on this site.<br>Select the one folder that holds your cars, skies, highways,<br>car_config.txt, traffic_config.txt and building_config.txt</div>
+            <label class="mbtn" id="folderLabel" for="folderInput" style="display:none">SELECT GAME FOLDER</label>
+            <input type="file" id="folderInput" webkitdirectory multiple>
+        </div>
+        <div class="screen hidden" id="screenMain">
+            <div class="mtitle">HIGHWAY SANDBOX</div>
+            <div id="scanSummary" class="mnote"></div>
+            <button class="mbtn big" id="playBtn">PLAY</button>
+            <button class="mbtn ghost" id="changeFolderBtn" style="display:none">CHANGE FOLDER</button>
+        </div>
+        <div class="screen hidden" id="screenSelect">
+            <div class="mtitle small">CHOOSE YOUR RIDE</div>
+            <div class="selwrap">
+                <div class="selcol"><h3>CAR</h3><div id="carGrid" class="mgrid"></div></div>
+                <div class="selcol"><h3>SKY</h3><div id="skyGrid" class="mgrid"></div></div>
+                <div class="selcol"><h3>MAP</h3><div id="mapList" class="mlist"></div></div>
+            </div>
+            <div class="mrow">
+                <button class="mbtn ghost" id="backBtn">BACK</button>
+                <button class="mbtn big" id="driveBtn">DRIVE</button>
+            </div>
+        </div>
+        <div class="screen hidden" id="screenLoading">
+            <div class="mtitle small">LOADING...</div>
+            <div id="loadLog" class="mnote"></div>
+        </div>
+    </div>
+
+    <div id="pauseMenu">
+        <div class="pbox">
+            <div class="mtitle small">PAUSED</div>
+            <button class="mbtn big" id="pmResume">RESUME</button>
+            <button class="mbtn" id="pmOptions">DEBUG MODE</button>
+            <button class="mbtn" id="pmReset">RESET</button>
+            <button class="mbtn ghost" id="pmQuit">QUIT</button>
+            <div class="pltitle">LICENSE PLATE</div>
+            <div class="plrow">
+                <input type="text" id="pmPlateText" maxlength="16" placeholder="Your plate text">
+                <button class="mbtn" id="pmPlateRandom">RANDOM</button>
+            </div>
+            <div class="plrow">
+                <select id="pmPlateOn"><option value="1">Plate On</option><option value="0">Plate Off</option></select>
+            </div>
+        </div>
+        <div id="dbgModal"><div class="pbox">
+            <div class="mtitle small">DEBUG MODE</div>
+            <input type="password" id="dbgPass" autocomplete="off" maxlength="32">
+            <div id="dbgMsg"></div>
+            <div class="mrow"><button class="mbtn ghost" id="dbgCancel">CANCEL</button><button class="mbtn" id="dbgGo">UNLOCK</button></div>
+        </div></div>
+    </div>
+
+    
+
+
+    <div id="ui-panel">
+        <button id="resumeBtn">&larr; BACK TO PAUSE MENU (Esc)</button>
+        <h2>CAMERA MODE & ENVIRONMENT</h2>
+        <div class="control-group">
+            <label>Camera Mode:</label>
+            <select id="cameraMode">
+                <option value="car">Car Follow Cam</option>
+                <option value="free">Free Fly Cam (WASD + Mouse)</option>
+            </select>
+        </div>
+        <div class="control-group" style="margin-top: 6px;">
+            <label>Ground Grid Texture:</label>
+            <select id="gridMode">
+                <option value="checkerboard">Checkerboard Grid</option>
+                <option value="lanes">Highway Lane Alignment Grid</option>
+                <option value="plain">Plain Dark Grid</option>
+            </select>
+        </div>
+
+        <div class="upload-section" style="margin-top: 8px;">
+            <label class="upload-btn" for="skyUpload">Upload 360° Sky / HDR (.hdr, .exr, .jpg, .png)</label>
+            <input type="file" id="skyUpload" accept=".hdr,.exr,.jpg,.jpeg,.png">
+        </div>
+
+        <h2>CAR POSITION & HEIGHT</h2>
+        <div class="control-group">
+            <label>Car Height (Y):</label>
+            <div class="input-pair">
+                <input type="range" id="carY" min="-500" max="500" step="0.5" value="99.5">
+                <input type="number" id="num-carY" step="0.5" value="99.5">
+            </div>
+        </div>
+
+        <h2>AI TRAFFIC GHOST DRIVER STUDIO</h2>
+        <div class="control-group">
+            <label>AI Traffic Mode:</label>
+            <select id="aiMode">
+                <option value="pattern">Ghost Driver Pattern Matrix</option>
+                <option value="random">Random Spawning</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>AI Speed:</label>
+            <div class="input-pair">
+                <input type="range" id="aiSpeed" min="-50.0" max="50.0" step="0.1" value="-2">
+                <input type="number" id="num-aiSpeed" step="0.1" value="-2">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Lane Width / Spread (Left/Right):</label>
+            <div class="input-pair">
+                <input type="range" id="aiOffsetX" min="-100" max="100" step="0.5" value="-8">
+                <input type="number" id="num-aiOffsetX" step="0.5" value="-8">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Individual Lane Nudge (Left/Right):</label>
+            <div class="input-pair">
+                <input type="range" id="aiLaneNudge" min="-50" max="50" step="0.2" value="-18.2">
+                <input type="number" id="num-aiLaneNudge" step="0.2" value="-18.2">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>AI Offset Y (Height):</label>
+            <div class="input-pair">
+                <input type="range" id="aiOffsetY" min="-100" max="100" step="0.5" value="0">
+                <input type="number" id="num-aiOffsetY" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>AI Row Spacing (Z-Interval):</label>
+            <div class="input-pair">
+                <input type="range" id="aiSpacingZ" min="10" max="200" step="1" value="70">
+                <input type="number" id="num-aiSpacingZ" step="1" value="70">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>AI Rotation Y (Heading):</label>
+            <div class="input-pair">
+                <input type="range" id="aiRotY" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-aiRotY" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-top: 6px;">
+            <label>Ghost Driver Pattern Matrix (2 Across x 8 Deep):</label>
+            <div id="patternGrid" class="pattern-grid-container"></div>
+        </div>
+
+        <div class="json-section">
+            <label>AI Traffic JSON Config:</label>
+            <textarea id="aiJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyAiJson">Copy AI JSON</button>
+                <button id="loadAiJson">Load AI JSON</button>
+            </div>
+        </div>
+
+        <h2>ONCOMING TRAFFIC (OPPOSITE LANES) STUDIO</h2>
+        <div class="control-group">
+            <label>Oncoming Mode:</label>
+            <select id="oppMode">
+                <option value="pattern">Ghost Driver Pattern Matrix</option>
+                <option value="random">Random Spawning</option>
+                <option value="off">Off</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>Oncoming Speed (toward you):</label>
+            <div class="input-pair">
+                <input type="range" id="oppSpeed" min="-50" max="50" step="0.1" value="2">
+                <input type="number" id="num-oppSpeed" step="0.1" value="2">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Lane Width / Spread (Left/Right):</label>
+            <div class="input-pair">
+                <input type="range" id="oppOffsetX" min="-100" max="100" step="0.5" value="-8">
+                <input type="number" id="num-oppOffsetX" step="0.5" value="-8">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Individual Lane Nudge (Left/Right):</label>
+            <div class="input-pair">
+                <input type="range" id="oppLaneNudge" min="-150" max="150" step="0.2" value="20.2">
+                <input type="number" id="num-oppLaneNudge" step="0.2" value="20.2">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Oncoming Offset Y (Height):</label>
+            <div class="input-pair">
+                <input type="range" id="oppOffsetY" min="-100" max="100" step="0.5" value="0">
+                <input type="number" id="num-oppOffsetY" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Oncoming Row Spacing (Z-Interval):</label>
+            <div class="input-pair">
+                <input type="range" id="oppSpacingZ" min="10" max="200" step="1" value="70">
+                <input type="number" id="num-oppSpacingZ" step="1" value="70">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Oncoming Rotation Y (Heading):</label>
+            <div class="input-pair">
+                <input type="range" id="oppRotY" min="-180" max="180" step="1" value="180">
+                <input type="number" id="num-oppRotY" step="1" value="180">
+            </div>
+        </div>
+        <div class="control-group" style="margin-top: 6px;">
+            <label>Oncoming Pattern Matrix (2 Across x 8 Deep):</label>
+            <div id="oppPatternGrid" class="pattern-grid-container"></div>
+        </div>
+
+        <div class="json-section">
+            <label>Oncoming Traffic JSON Config:</label>
+            <textarea id="oppJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyOppJson">Copy Oncoming JSON</button>
+                <button id="loadOppJson">Load Oncoming JSON</button>
+            </div>
+        </div>
+
+        <h2>TRAFFIC CAR MODELS</h2>
+        <div class="upload-section">
+            <label class="upload-btn" for="trafficUpload">Add Traffic Car Model(s) (.glb / .gltf / .fbx)</label>
+            <input type="file" id="trafficUpload" accept=".glb,.gltf,.fbx" multiple>
+        </div>
+        <div class="control-group" style="margin-top: 6px;">
+            <label>Show All Traffic Hitboxes:</label>
+            <select id="showHitboxes"><option value="0" selected>Off</option><option value="1">On</option></select>
+        </div>
+        <div id="trafficList"></div>
+        <div class="json-section">
+            <label>Traffic Car List JSON (offsets):</label>
+            <textarea id="trafficJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyTrafficJson">Copy Traffic JSON</button>
+                <button id="loadTrafficJson">Load Traffic JSON</button>
+            </div>
+        </div>
+
+                <h2>PLAYER PLATE (used when your car isn't in the traffic list)</h2>
+        <div id="playerPlateUI"></div>
+        <div class="json-section">
+            <label>Player Plate JSON Config:</label>
+            <textarea id="playerPlateJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyPlayerPlateJson">Copy Plate JSON</button>
+                <button id="loadPlayerPlateJson">Load Plate JSON</button>
+            </div>
+        </div>
+
+        
+        <h2>HIGHWAY PROP & LOOP STUDIO</h2>
+        <div class="control-group">
+            <label>Prop Size (Scale):</label>
+            <div class="input-pair">
+                <input type="range" id="propScale" min="0.1" max="50.0" step="0.1" value="9.3">
+                <input type="number" id="num-propScale" step="0.1" value="9.3">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Position X:</label>
+            <div class="input-pair">
+                <input type="range" id="propX" min="-500" max="500" step="1" value="0">
+                <input type="number" id="num-propX" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Position Y (Height):</label>
+            <div class="input-pair">
+                <input type="range" id="propY" min="-1400" max="1400" step="0.5" value="0">
+                <input type="number" id="num-propY" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Position Z (Forward/Back):</label>
+            <div class="input-pair">
+                <input type="range" id="propZ" min="-1400" max="1400" step="1" value="-15">
+                <input type="number" id="num-propZ" step="1" value="-15">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Highway Loop Count (Tiles):</label>
+            <div class="input-pair">
+                <input type="range" id="highwayLoopCount" min="1" max="25" step="1" value="5">
+                <input type="number" id="num-highwayLoopCount" step="1" value="5">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Highway Segment Length (Max 3000):</label>
+            <div class="input-pair">
+                <input type="range" id="highwaySegmentLength" min="5" max="3000" step="1" value="1566">
+                <input type="number" id="num-highwaySegmentLength" step="1" value="1566">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Highway Offset Z:</label>
+            <div class="input-pair">
+                <input type="range" id="highwayOffsetZ" min="-500" max="500" step="1" value="0">
+                <input type="number" id="num-highwayOffsetZ" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Rotation X:</label>
+            <div class="input-pair">
+                <input type="range" id="propRotX" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-propRotX" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Rotation Y:</label>
+            <div class="input-pair">
+                <input type="range" id="propRotY" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-propRotY" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Prop Rotation Z:</label>
+            <div class="input-pair">
+                <input type="range" id="propRotZ" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-propRotZ" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="json-section">
+            <label>Highway Prop JSON Config:</label>
+            <textarea id="propJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyPropJson">Copy Prop JSON</button>
+                <button id="loadPropJson">Load Prop JSON</button>
+            </div>
+        </div>
+
+        <div class="upload-section" style="margin-top: 10px;">
+            <label class="upload-btn" for="highwayUpload">Upload Highway Model (.glb / .gltf)</label>
+            <input type="file" id="highwayUpload" accept=".glb,.gltf">
+        </div>
+
+        <div id="buildingStudio"></div>
+
+        <h2>PHYSICS STUDIO</h2>
+        <div class="control-group">
+            <label>Master Car Speed (All Cars):</label>
+            <div class="input-pair">
+                <input type="range" id="masterSpeed" min="0" max="5" step="0.05" value="1.75">
+                <input type="number" id="num-masterSpeed" step="0.05" value="1.75">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Weight (Mass):</label>
+            <div class="input-pair">
+                <input type="range" id="weight" min="50" max="3500" step="50" value="1000">
+                <input type="number" id="num-weight" step="50" value="1000">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Forward Accel:</label>
+            <div class="input-pair">
+                <input type="range" id="accel" min="0.001" max="500.1" step="0.005" value="0.02">
+                <input type="number" id="num-accel" step="0.005" value="0.02">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Braking Decel:</label>
+            <div class="input-pair">
+                <input type="range" id="brake" min="0.001" max="500.05" step="0.005" value="0.015">
+                <input type="number" id="num-brake" step="0.005" value="0.015">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Top Speed:</label>
+            <div class="input-pair">
+                <input type="range" id="topSpeed" min="0.1" max="503.0" step="0.1" value="7.0">
+                <input type="number" id="num-topSpeed" step="0.1" value="7.0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Turn Speed Factor:</label>
+            <div class="input-pair">
+                <input type="range" id="turnSpeedFactor" min="0.0001" max="500.02" step="0.0005" value="0.004">
+                <input type="number" id="num-turnSpeedFactor" step="0.0005" value="0.004">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Turn Speed Limit (Cap):</label>
+            <div class="input-pair">
+                <input type="range" id="turnSpeedLimit" min="0.001" max="501.0" step="0.005" value="0.05">
+                <input type="number" id="num-turnSpeedLimit" step="0.005" value="0.05">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Steering Smoothness (Wheel Lag):</label>
+            <div class="input-pair">
+                <input type="range" id="steerSmoothing" min="0.01" max="1.0" step="0.01" value="0.15">
+                <input type="number" id="num-steerSmoothing" step="0.01" value="0.15">
+            </div>
+        </div>
+
+        <h2>SOUND EDITOR STUDIO</h2>
+        <div class="control-group">
+            <label>Base Pitch (Freq):</label>
+            <div class="input-pair">
+                <input type="range" id="soundPitch" min="10" max="1000" step="1" value="60">
+                <input type="number" id="num-soundPitch" step="1" value="60">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Bass Filter Cutoff:</label>
+            <div class="input-pair">
+                <input type="range" id="soundBass" min="50" max="5000" step="10" value="400">
+                <input type="number" id="num-soundBass" step="10" value="400">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Wave Height (Volume):</label>
+            <div class="input-pair">
+                <input type="range" id="soundVolume" min="0.0" max="1.0" step="0.01" value="0.05">
+                <input type="number" id="num-soundVolume" step="0.01" value="0.05">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Wave Length / Distance:</label>
+            <div class="input-pair">
+                <input type="range" id="soundLength" min="10" max="1000" step="5" value="120">
+                <input type="number" id="num-soundLength" step="5" value="120">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>In-a-Box / Muffle (Bandpass Q):</label>
+            <div class="input-pair">
+                <input type="range" id="soundBoxResonance" min="0.1" max="30.0" step="0.1" value="2.0">
+                <input type="number" id="num-soundBoxResonance" step="0.1" value="2.0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Sharpness / Aggression:</label>
+            <div class="input-pair">
+                <input type="range" id="soundSharpness" min="0" max="100" step="1" value="10">
+                <input type="number" id="num-soundSharpness" step="1" value="10">
+            </div>
+        </div>
+
+        <h2>VEHICLE VISUALS & SCALE</h2>
+        <div class="control-group">
+            <label>Car Size (Scale):</label>
+            <div class="input-pair">
+                <input type="range" id="carScale" min="0.1" max="503.0" step="0.1" value="1.0">
+                <input type="number" id="num-carScale" step="0.1" value="1.0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Shininess (Metal/Rough):</label>
+            <div class="input-pair">
+                <input type="range" id="shininess" min="0.0" max="501.0" step="0.05" value="1.0">
+                <input type="number" id="num-shininess" step="0.05" value="1.0">
+            </div>
+        </div>
+
+        <h2>LIGHTING, SHADOWS & EFFECTS STUDIO</h2>
+        <div class="control-group">
+            <label>Base Brightness (Exposure):</label>
+            <div class="input-pair">
+                <input type="range" id="baseBrightness" min="0" max="5" step="0.05" value="1.4">
+                <input type="number" id="num-baseBrightness" step="0.05" value="1.4">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Environment Brightness (Reflections / Sky Light):</label>
+            <div class="input-pair">
+                <input type="range" id="envBrightness" min="0" max="10" step="0.05" value="1">
+                <input type="number" id="num-envBrightness" step="0.05" value="1">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Ambient Light Intensity:</label>
+            <div class="input-pair">
+                <input type="range" id="ambientIntensity" min="0" max="5" step="0.05" value="1.2">
+                <input type="number" id="num-ambientIntensity" step="0.05" value="1.2">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Ambient Light Color:</label>
+            <input type="color" id="ambientColor" value="#ffffff">
+        </div>
+        <div class="control-group">
+            <label>Sun Intensity:</label>
+            <div class="input-pair">
+                <input type="range" id="sunIntensity" min="0" max="10" step="0.05" value="1.25">
+                <input type="number" id="num-sunIntensity" step="0.05" value="1.25">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Sun Color:</label>
+            <input type="color" id="sunColor" value="#ffffff">
+        </div>
+        <div class="control-group">
+            <label>Sun Direction (Compass 0-360):</label>
+            <div class="input-pair">
+                <input type="range" id="sunAzimuth" min="0" max="360" step="0.1" value="38.7">
+                <input type="number" id="num-sunAzimuth" step="0.1" value="38.7">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Sun Height (Elevation -90 to 90):</label>
+            <div class="input-pair">
+                <input type="range" id="sunElevation" min="-90" max="90" step="0.1" value="57.4">
+                <input type="number" id="num-sunElevation" step="0.1" value="57.4">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Moon Intensity (0 = off):</label>
+            <div class="input-pair">
+                <input type="range" id="moonIntensity" min="0" max="5" step="0.05" value="0">
+                <input type="number" id="num-moonIntensity" step="0.05" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Moon Color:</label>
+            <input type="color" id="moonColor" value="#9db4ff">
+        </div>
+        <div class="control-group">
+            <label>Moon Direction (Compass 0-360):</label>
+            <div class="input-pair">
+                <input type="range" id="moonAzimuth" min="0" max="360" step="0.1" value="220">
+                <input type="number" id="num-moonAzimuth" step="0.1" value="220">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Moon Height (Elevation -90 to 90):</label>
+            <div class="input-pair">
+                <input type="range" id="moonElevation" min="-90" max="90" step="0.1" value="40">
+                <input type="number" id="num-moonElevation" step="0.1" value="40">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Car Shadows:</label>
+            <select id="carShadows"><option value="1" selected>On</option><option value="0">Off</option></select>
+        </div>
+        <div class="control-group">
+            <label>Shadow Quality (Map Size):</label>
+            <select id="shadowQuality"><option value="512">Low (512)</option><option value="1024">Medium (1024)</option><option value="2048" selected>High (2048)</option><option value="4096">Ultra (4096)</option></select>
+        </div>
+        <div class="control-group">
+            <label>Shadow Area Size (smaller = sharper):</label>
+            <div class="input-pair">
+                <input type="range" id="shadowDistance" min="20" max="600" step="5" value="150">
+                <input type="number" id="num-shadowDistance" step="5" value="150">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Motion Blur:</label>
+            <select id="motionBlur"><option value="0">Off</option><option value="1" selected>On</option></select>
+        </div>
+        <div class="control-group">
+            <label>Motion Blur Strength:</label>
+            <div class="input-pair">
+                <input type="range" id="motionBlurStrength" min="0" max="1" step="0.01" value="0.08">
+                <input type="number" id="num-motionBlurStrength" step="0.01" value="0.08">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Depth of Field (0 = off, focuses on your car):</label>
+            <div class="input-pair">
+                <input type="range" id="dofStrength" min="0" max="1" step="0.01" value="0">
+                <input type="number" id="num-dofStrength" step="0.01" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Traffic Car Reflections:</label>
+            <select id="trafficReflections"><option value="1" selected>On</option><option value="0">Off</option></select>
+        </div>
+        <div class="json-section">
+            <label>Lighting & Effects JSON Config:</label>
+            <textarea id="envJsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyEnvJson">Copy Lighting JSON</button>
+                <button id="loadEnvJson">Load Lighting JSON</button>
+            </div>
+        </div>
+
+        <h2>CAMERA STUDIO</h2>
+        <div class="control-group">
+            <label>Field of View (FOV):</label>
+            <div class="input-pair">
+                <input type="range" id="fov" min="10" max="620" step="1" value="65">
+                <input type="number" id="num-fov" step="1" value="65">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Base Camera Zoom:</label>
+            <div class="input-pair">
+                <input type="range" id="zoom" min="1" max="530" step="1" value="9">
+                <input type="number" id="num-zoom" step="1" value="9">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Speed Zoom Factor:</label>
+            <div class="input-pair">
+                <input type="range" id="speedZoomFactor" min="0.0" max="510.0" step="0.1" value="2.0">
+                <input type="number" id="num-speedZoomFactor" step="0.1" value="2.0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Smoothing:</label>
+            <div class="input-pair">
+                <input type="range" id="smoothing" min="0.001" max="500.5" step="0.01" value="1.0">
+                <input type="number" id="num-smoothing" step="0.01" value="1.0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Camera Offset X (Left/Right):</label>
+            <div class="input-pair">
+                <input type="range" id="camOffsetX" min="-200" max="200" step="0.5" value="0">
+                <input type="number" id="num-camOffsetX" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Offset Y (Up/Down):</label>
+            <div class="input-pair">
+                <input type="range" id="camOffsetY" min="-200" max="200" step="0.5" value="0">
+                <input type="number" id="num-camOffsetY" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Offset Z (Forward/Back):</label>
+            <div class="input-pair">
+                <input type="range" id="camOffsetZ" min="-200" max="200" step="0.5" value="0">
+                <input type="number" id="num-camOffsetZ" step="0.5" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Rotation X (Pitch):</label>
+            <div class="input-pair">
+                <input type="range" id="camRotX" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-camRotX" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Rotation Y (Yaw):</label>
+            <div class="input-pair">
+                <input type="range" id="camRotY" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-camRotY" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Camera Rotation Z (Roll):</label>
+            <div class="input-pair">
+                <input type="range" id="camRotZ" min="-180" max="180" step="1" value="0">
+                <input type="number" id="num-camRotZ" step="1" value="0">
+            </div>
+        </div>
+
+        <h2>MODEL ORIENTATION FIXER</h2>
+        <div class="control-group">
+            <label>Model Rotation X:</label>
+            <div class="input-pair">
+                <input type="range" id="rotX" min="-680" max="680" step="1" value="0">
+                <input type="number" id="num-rotX" step="1" value="0">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Model Rotation Y:</label>
+            <div class="input-pair">
+                <input type="range" id="rotY" min="-680" max="680" step="1" value="180">
+                <input type="number" id="num-rotY" step="1" value="180">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Model Rotation Z:</label>
+            <div class="input-pair">
+                <input type="range" id="rotZ" min="-680" max="680" step="1" value="0">
+                <input type="number" id="num-rotZ" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="json-section">
+            <label>Vehicle Physics JSON Config:</label>
+            <textarea id="jsonBox"></textarea>
+            <div class="btn-row">
+                <button id="copyJson">Copy Vehicle JSON</button>
+                <button id="loadJson">Load Vehicle JSON</button>
+            </div>
+        </div>
+
+        <div class="upload-section" style="margin-top: 10px;">
+            <label class="upload-btn" for="modelUpload">Upload Car (.glb / .gltf / .fbx)</label>
+            <input type="file" id="modelUpload" accept=".glb,.gltf,.fbx">
+        </div>
+    </div>
+
+        <div id="speedo" title="Drag to move, scroll to resize"><canvas id="speedoCanvas" width="320" height="320"></canvas></div>
+
+    
+    <div id="hud">
+        <div id="hud-score">CARS PASSED: 0</div>
+        <div id="hud-speed">SPEED: 0 KPH | GEAR: 1</div>
+        <div id="hud-controls">[W/S] Drive | [A/D] Steer | [Esc] Settings | [Click+Drag] Free Look</div>
+    </div>
+    <div id="carHud"><div id="carHudNum">0</div><div id="carHudLabel">CARS PASSED</div></div><!-- Three.js & Loaders CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/RGBELoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/EXRLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
+
+    <script>
+        // Web Audio API Sound Setup
+        let audioCtx = null;
+        let engineOsc = null;
+        let engineFilter = null;
+        let waveShaper = null;
+        let engineGain = null;
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 10;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            engineOsc = audioCtx.createOscillator();
+            engineOsc.type = 'sawtooth';
+            engineOsc.frequency.setValueAtTime(physics.soundPitch, audioCtx.currentTime);
+
+            engineFilter = audioCtx.createBiquadFilter();
+            engineFilter.type = 'bandpass';
+            engineFilter.frequency.setValueAtTime(physics.soundBass, audioCtx.currentTime);
+            engineFilter.Q.setValueAtTime(physics.soundBoxResonance, audioCtx.currentTime);
+
+            waveShaper = audioCtx.createWaveShaper();
+            waveShaper.curve = makeDistortionCurve(physics.soundSharpness);
+            waveShaper.oversample = '4x';
+
+            engineGain = audioCtx.createGain();
+            engineGain.gain.setValueAtTime(physics.soundVolume, audioCtx.currentTime);
+
+            engineOsc.connect(engineFilter);
+            engineFilter.connect(waveShaper);
+            waveShaper.connect(engineGain);
+            engineGain.connect(audioCtx.destination);
+            engineOsc.start();
+        }
+
+        window.addEventListener('keydown', () => { initAudio(); }, { once: true });
+        window.addEventListener('click', () => { initAudio(); }, { once: true });
+
+        // Locked-in Default Configurations with User JSON
+        const defaultPropConfig = {
+            propScale: 9.3,
+            propX: 0,
+            propY: 0,
+            propZ: -15,
+            propRotX: 0,
+            propRotY: 0,
+            propRotZ: 0,
+            highwayLoopCount: 5,
+            highwaySegmentLength: 1566,
+            highwayOffsetZ: 0,
+            aiMode: "pattern",
+            aiSpeed: -2,
+            aiOffsetX: -8,
+            aiLaneNudge: -18.2,
+            aiOffsetY: 0,
+            aiSpacingZ: 70,
+            aiRotY: 0,
+            oppMode: "pattern",
+            oppSpeed: 2,
+            oppOffsetX: -8,
+            oppLaneNudge: 20.2,
+            oppOffsetY: 0,
+            oppSpacingZ: 70,
+            oppRotY: 180,
+            oppPatternMatrix: [
+                [0, 1],
+                [1, 0],
+                [0, 0],
+                [1, 0],
+                [0, 1],
+                [0, 0],
+                [1, 0],
+                [0, 1]
+            ],
+            patternMatrix: [
+                [1, 0],
+                [0, 0],
+                [0, 1],
+                [0, 0],
+                [1, 0],
+                [1, 0],
+                [0, 0],
+                [0, 1]
+            ]
+        };
+
+        let propConfig = { ...defaultPropConfig };
+        let carsPassedCount = 0;
+
+        const defaultPhysics = {
+            carY: 99.5,
+            masterSpeed: 1.75,
+            weight: 1000,
+            accel: 0.02,
+            brake: 0.015,
+            topSpeed: 7.0,
+            turnSpeedFactor: 0.004,
+            turnSpeedLimit: 0.05,
+            steerSmoothing: 0.15,
+            soundPitch: 60,
+            soundBass: 400,
+            soundVolume: 0.05,
+            soundLength: 120,
+            soundBoxResonance: 2.0,
+            soundSharpness: 10,
+            carScale: 1.0,
+            shininess: 1.0,
+            fov: 65,
+            zoom: 9,
+            speedZoomFactor: 2.0,
+            smoothing: 1.0,
+            camOffsetX: 0,
+            camOffsetY: 0,
+            camOffsetZ: 0,
+            camRotX: 0,
+            camRotY: 0,
+            camRotZ: 0,
+            rotX: 0,
+            rotY: 180,
+            rotZ: 0
+        };
+
+        let physics = { ...defaultPhysics };
+
+        const defaultEnvConfig = {
+            baseBrightness: 1.4,
+            envBrightness: 1.0,
+            ambientIntensity: 1.2,
+            ambientColor: "#ffffff",
+            sunIntensity: 1.25,
+            sunColor: "#ffffff",
+            sunAzimuth: 38.7,
+            sunElevation: 57.4,
+            moonIntensity: 0,
+            moonColor: "#9db4ff",
+            moonAzimuth: 220,
+            moonElevation: 40,
+            carShadows: 1,
+            shadowQuality: 2048,
+            shadowDistance: 150,
+            motionBlur: 1,
+            motionBlurStrength: 0.08,
+            trafficReflections: 1,
+            dofStrength: 0
+        };
+        let envConfig = { ...defaultEnvConfig };
+        let cameraMode = 'car';
+        let gridMode = 'checkerboard';
+
+        const propKeys = Object.keys(defaultPropConfig);
+        const physicsKeys = Object.keys(defaultPhysics);
+
+        function buildGrid(containerId, matrixKey) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            const matrix = propConfig[matrixKey];
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 2; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'pattern-cell';
+                    if (matrix[r][c] === 1) {
+                        cell.classList.add('active');
+                        cell.textContent = `R${r+1}C${c+1}`;
+                    } else {
+                        cell.textContent = `-`;
+                    }
+                    
+                    cell.addEventListener('click', () => {
+                        matrix[r][c] = matrix[r][c] === 1 ? 0 : 1;
+                        buildPatternGridUI();
+                        rebuildAiCars();
+                        updateJsonBoxes();
+                    });
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        function buildPatternGridUI() {
+            buildGrid('patternGrid', 'patternMatrix');
+            buildGrid('oppPatternGrid', 'oppPatternMatrix');
+        }
+
+        function updateUIFromState() {
+            if (bldReady) syncBuildingUI();
+            propKeys.forEach(key => {
+                if (key === 'aiMode' || key === 'oppMode') {
+                    document.getElementById(key).value = propConfig[key];
+                    return;
+                }
+                if (key === 'patternMatrix' || key === 'oppPatternMatrix') return;
+                const range = document.getElementById(key);
+                const num = document.getElementById(`num-${key}`);
+                if (range && num) {
+                    range.value = propConfig[key];
+                    num.value = propConfig[key];
+                }
+            });
+
+            physicsKeys.forEach(key => {
+                const range = document.getElementById(key);
+                const num = document.getElementById(`num-${key}`);
+                if (range && num) {
+                    range.value = physics[key];
+                    num.value = physics[key];
+                }
+            });
+
+            document.getElementById('cameraMode').value = cameraMode;
+            document.getElementById('gridMode').value = gridMode;
+
+            buildPatternGridUI();
+            camera.fov = physics.fov;
+            camera.updateProjectionMatrix();
+            updateCarTransform();
+            updateCarMaterials();
+            rebuildHighwayLoops();
+            rebuildAiCars();
+            updateGridMode();
+            updateJsonBoxes();
+        }
+
+        function bindInputPair(key, configObj, updateCallback) {
+            const range = document.getElementById(key);
+            const num = document.getElementById(`num-${key}`);
+            if (!range || !num) return;
+
+            range.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                configObj[key] = val;
+                num.value = val;
+                if (updateCallback) updateCallback(val);
+                updateJsonBoxes();
+            });
+
+            num.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (!isNaN(val)) {
+                    configObj[key] = val;
+                    range.value = val;
+                    if (updateCallback) updateCallback(val);
+                    updateJsonBoxes();
+                }
+            });
+        }
+
+        propKeys.forEach(key => {
+            if (key === 'aiMode' || key === 'oppMode') {
+                document.getElementById(key).addEventListener('change', (e) => {
+                    propConfig[key] = e.target.value;
+                    rebuildAiCars();
+                    updateJsonBoxes();
+                });
+            } else if (key !== 'patternMatrix' && key !== 'oppPatternMatrix') {
+                bindInputPair(key, propConfig, () => {
+                    rebuildHighwayLoops();
+                    rebuildAiCars();
+                });
+            }
+        });
+
+        physicsKeys.forEach(key => {
+            bindInputPair(key, physics, (val) => {
+                if (key === 'carY') carContainer.position.y = val;
+                if (key === 'fov') { camera.fov = val; camera.updateProjectionMatrix(); }
+                if (key.startsWith('rot') || key === 'carScale') updateCarTransform();
+                if (key === 'shininess') updateCarMaterials();
+                if (audioCtx) {
+                    if (engineFilter && key === 'soundBass') engineFilter.frequency.setValueAtTime(physics.soundBass, audioCtx.currentTime);
+                    if (engineFilter && key === 'soundBoxResonance') engineFilter.Q.setValueAtTime(physics.soundBoxResonance, audioCtx.currentTime);
+                    if (waveShaper && key === 'soundSharpness') waveShaper.curve = makeDistortionCurve(physics.soundSharpness);
+                }
+            });
+        });
+
+        document.getElementById('cameraMode').addEventListener('change', (e) => {
+            cameraMode = e.target.value;
+            if (cameraMode === 'free') {
+                freeCamPos.copy(camera.position);
+                freeCamRot.x = 0;
+                freeCamRot.y = carAngle;
+            }
+        });
+
+        document.getElementById('gridMode').addEventListener('change', (e) => {
+            gridMode = e.target.value;
+            updateGridMode();
+        });
+
+        function updateJsonBoxes() {
+            document.getElementById('propJsonBox').value = JSON.stringify(propConfig, null, 2); if (bldReady) updateBuildingJson();
+            document.getElementById('jsonBox').value = JSON.stringify(physics, null, 2);
+            
+            const aiKeys = ['aiMode', 'aiSpeed', 'aiOffsetX', 'aiLaneNudge', 'aiOffsetY', 'aiSpacingZ', 'aiRotY', 'patternMatrix'];
+            const aiObj = {};
+            aiKeys.forEach(k => aiObj[k] = propConfig[k]);
+            document.getElementById('aiJsonBox').value = JSON.stringify(aiObj, null, 2);
+
+            const oppKeys = ['oppMode', 'oppSpeed', 'oppOffsetX', 'oppLaneNudge', 'oppOffsetY', 'oppSpacingZ', 'oppRotY', 'oppPatternMatrix'];
+            const oppObj = {};
+            oppKeys.forEach(k => oppObj[k] = propConfig[k]);
+            document.getElementById('oppJsonBox').value = JSON.stringify(oppObj, null, 2);
+        }
+
+        function sanitizeAndLoadJson(jsonString, targetObj, defaultObj, onComplete) {
+            try {
+                const parsed = JSON.parse(jsonString);
+                Object.keys(defaultObj).forEach(key => {
+                    if (parsed.hasOwnProperty(key)) targetObj[key] = parsed[key];
+                });
+                updateUIFromState();
+                if (onComplete) onComplete();
+                alert('JSON successfully loaded & unrecognized properties removed!');
+            } catch (err) { alert('Invalid JSON formatting.'); }
+        }
+
+        document.getElementById('copyPropJson').addEventListener('click', () => {
+            const box = document.getElementById('propJsonBox');
+            box.select(); navigator.clipboard.writeText(box.value); alert('Prop JSON copied!');
+        });
+        document.getElementById('loadPropJson').addEventListener('click', () => {
+            sanitizeAndLoadJson(document.getElementById('propJsonBox').value, propConfig, defaultPropConfig, () => { rebuildHighwayLoops(); rebuildAiCars(); });
+        });
+        document.getElementById('copyAiJson').addEventListener('click', () => {
+            const box = document.getElementById('aiJsonBox');
+            box.select(); navigator.clipboard.writeText(box.value); alert('AI JSON copied!');
+        });
+        document.getElementById('loadAiJson').addEventListener('click', () => {
+            sanitizeAndLoadJson(document.getElementById('aiJsonBox').value, propConfig, defaultPropConfig, () => { buildPatternGridUI(); rebuildAiCars(); });
+        });
+        document.getElementById('copyOppJson').addEventListener('click', () => {
+            const box = document.getElementById('oppJsonBox');
+            box.select(); navigator.clipboard.writeText(box.value); alert('Oncoming JSON copied!');
+        });
+        document.getElementById('loadOppJson').addEventListener('click', () => {
+            sanitizeAndLoadJson(document.getElementById('oppJsonBox').value, propConfig, defaultPropConfig, () => { buildPatternGridUI(); rebuildAiCars(); });
+        });
+        document.getElementById('copyJson').addEventListener('click', () => {
+            const box = document.getElementById('jsonBox');
+            box.select(); navigator.clipboard.writeText(box.value); alert('Vehicle Physics JSON copied!');
+        });
+        document.getElementById('loadJson').addEventListener('click', () => {
+            sanitizeAndLoadJson(document.getElementById('jsonBox').value, physics, defaultPhysics, () => {
+                carContainer.position.y = physics.carY;
+                if(audioCtx) {
+                    if(engineFilter) {
+                        engineFilter.frequency.setValueAtTime(physics.soundBass, audioCtx.currentTime);
+                        engineFilter.Q.setValueAtTime(physics.soundBoxResonance, audioCtx.currentTime);
+                    }
+                    if(waveShaper) waveShaper.curve = makeDistortionCurve(physics.soundSharpness);
+                }
+            });
+        });
+
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1e293b);
+        scene.fog = new THREE.FogExp2(0x1e293b, 0.003);
+
+        const camera = new THREE.PerspectiveCamera(physics.fov, window.innerWidth / window.innerHeight, 0.1, 10000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.4;
+        container.appendChild(renderer.domElement);
+
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128, { generateMipmaps: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+        const cubeCamera = new THREE.CubeCamera(0.1, 10000, cubeRenderTarget);
+        scene.add(cubeCamera);
+
+        const mirrorMaterial = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 1.0, roughness: 0.0, envMapIntensity: 3.0, side: THREE.FrontSide });
+        const roofMirrorMaterial = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 1.0, roughness: 0.0, side: THREE.FrontSide });
+        mirrorMaterial.envMap = cubeRenderTarget.texture;
+        roofMirrorMaterial.envMap = cubeRenderTarget.texture;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.8);
+        dirLight.position.set(40, 100, 50);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        const d = 150;
+        dirLight.shadow.camera.left = -d; dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d; dirLight.shadow.camera.bottom = -d;
+        scene.add(dirLight); scene.add(dirLight.target);
+
+        const moonLight = new THREE.DirectionalLight(0x9db4ff, 0);
+        scene.add(moonLight); scene.add(moonLight.target);
+
+        const envGroup = new THREE.Group();
+        scene.add(envGroup);
+        const planeGeo = new THREE.PlaneGeometry(8000, 8000);
+
+        const canvasChecker = document.createElement('canvas');
+        canvasChecker.width = 256; canvasChecker.height = 256;
+        const ctxChecker = canvasChecker.getContext('2d');
+        for (let x = 0; x < 8; x++) {
+            for (let y = 0; y < 8; y++) {
+                ctxChecker.fillStyle = (x + y) % 2 === 0 ? '#ffffff' : '#000000';
+                ctxChecker.fillRect(x * 32, y * 32, 32, 32);
+            }
+        }
+        const checkerTexture = new THREE.CanvasTexture(canvasChecker);
+        checkerTexture.wrapS = THREE.RepeatWrapping; checkerTexture.wrapT = THREE.RepeatWrapping;
+        checkerTexture.repeat.set(80, 80);
+        const checkerMat = new THREE.MeshStandardMaterial({ map: checkerTexture, roughness: 0.4, side: THREE.FrontSide });
+
+        const canvasLane = document.createElement('canvas');
+        canvasLane.width = 512; canvasLane.height = 512;
+        const ctxLane = canvasLane.getContext('2d');
+        ctxLane.fillStyle = '#1a1d24'; ctxLane.fillRect(0, 0, 512, 512);
+        ctxLane.fillStyle = '#272b35'; ctxLane.fillRect(64, 0, 384, 512);
+        ctxLane.strokeStyle = '#f59e0b'; ctxLane.lineWidth = 4;
+        ctxLane.beginPath(); ctxLane.moveTo(75, 0); ctxLane.lineTo(75, 512); ctxLane.moveTo(437, 0); ctxLane.lineTo(437, 512); ctxLane.stroke();
+        ctxLane.strokeStyle = '#ffffff'; ctxLane.lineWidth = 3; ctxLane.setLineDash([20, 20]);
+        ctxLane.beginPath(); ctxLane.moveTo(256, 0); ctxLane.lineTo(256, 512); ctxLane.stroke();
+        const laneTexture = new THREE.CanvasTexture(canvasLane);
+        laneTexture.wrapS = THREE.RepeatWrapping; laneTexture.wrapT = THREE.RepeatWrapping;
+        laneTexture.repeat.set(20, 200);
+        const laneMat = new THREE.MeshStandardMaterial({ map: laneTexture, roughness: 0.3, side: THREE.FrontSide });
+
+        const plainMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, side: THREE.FrontSide });
+
+        let envMesh = new THREE.Mesh(planeGeo, checkerMat);
+        envMesh.rotation.x = -Math.PI / 2; envMesh.receiveShadow = true; envMesh.matrixAutoUpdate = false; envMesh.updateMatrix();
+        envGroup.add(envMesh);
+
+        function updateGridMode() {
+            envGroup.clear();
+            let mat = checkerMat;
+            if (gridMode === 'lanes') mat = laneMat;
+            if (gridMode === 'plain') mat = plainMat;
+            envMesh = new THREE.Mesh(planeGeo, mat);
+            envMesh.rotation.x = -Math.PI / 2; envMesh.receiveShadow = true; envMesh.matrixAutoUpdate = false; envMesh.updateMatrix();
+            envGroup.add(envMesh);
+        }
+
+        const highwayPropGroup = new THREE.Group();
+        scene.add(highwayPropGroup);
+        let baseHighwaySource = null;
+        let baseHighwayParts = null; // e.g. [HIGHWAY1.1, HIGHWAY1.2, HIGHWAY1.3] -> all shown together as one map
+
+        function rebuildHighwayLoops() {
+            highwayPropGroup.clear();
+            if (!baseHighwaySource) return;
+            const parts = (baseHighwayParts && baseHighwayParts.length) ? baseHighwayParts : [baseHighwaySource];
+            const count = parseInt(propConfig.highwayLoopCount) || 1; // every loop slot holds ALL parts of the map together
+            const segmentLen = parseFloat(propConfig.highwaySegmentLength) || 50;
+            const offsetZ = parseFloat(propConfig.highwayOffsetZ) || 0;
+            for (let i = 0; i < count; i++) {
+                const clone = new THREE.Group(); parts.forEach(p => clone.add(p.clone(true)));
+                clone.position.set(propConfig.propX, propConfig.propY, propConfig.propZ + offsetZ + (i * segmentLen));
+                clone.scale.set(propConfig.propScale, propConfig.propScale, propConfig.propScale);
+                clone.rotation.x = THREE.MathUtils.degToRad(propConfig.propRotX);
+                clone.rotation.y = THREE.MathUtils.degToRad(propConfig.propRotY);
+                clone.rotation.z = THREE.MathUtils.degToRad(propConfig.propRotZ);
+                highwayPropGroup.add(clone);
+            }
+        }
+
+
+        // ===== CITY BUILDINGS (procedural, looping, editable) =====
+        var bldReady = false;
+        const defaultBuildingConfig = {
+            buildingsOn: "1",
+            buildingSide: "both",
+            buildingXOffset: 70,
+            buildingShiftX: 0,
+            buildingYOffset: 0,
+            buildingZOffset: 0,
+            buildingRotY: 0,
+            buildingRows: 2,
+            buildingRowGap: 15,
+            buildingMinWidth: 25,
+            buildingMaxWidth: 60,
+            buildingMinDepth: 25,
+            buildingMaxDepth: 50,
+            buildingMinHeight: 40,
+            buildingMaxHeight: 220,
+            buildingGap: 6,
+            buildingGapRandom: 20,
+            buildingLoopCount: 6,
+            buildingSegmentLength: 1000,
+            buildingColor: "#8b9bb4",
+            buildingColorVariation: 0.35,
+            buildingWindowGlow: 0.6,
+            buildingLitRatio: 0.35,
+            buildingSeed: 7
+        };
+        let buildingConfig = { ...defaultBuildingConfig };
+        const buildingSliderKeys = [
+            ['buildingXOffset', 'Distance From Road Centre (X)', 0, 600, 1],
+            ['buildingShiftX', 'Shift Sideways (X, moves both sides)', -300, 300, 1],
+            ['buildingYOffset', 'Height Offset (Y, from road level)', -500, 500, 0.5],
+            ['buildingZOffset', 'Position Along Road (Z offset)', -2000, 2000, 1],
+            ['buildingRotY', 'Building Rotation Y', -180, 180, 1],
+            ['buildingRows', 'Rows Of Buildings (depth layers)', 1, 4, 1],
+            ['buildingRowGap', 'Gap Between Rows', 0, 200, 1],
+            ['buildingMinWidth', 'Min Width (along road)', 4, 300, 1],
+            ['buildingMaxWidth', 'Max Width (along road)', 4, 300, 1],
+            ['buildingMinDepth', 'Min Depth (away from road)', 4, 300, 1],
+            ['buildingMaxDepth', 'Max Depth (away from road)', 4, 300, 1],
+            ['buildingMinHeight', 'Min Height', 8, 1000, 1],
+            ['buildingMaxHeight', 'Max Height', 8, 1000, 1],
+            ['buildingGap', 'Min Gap Between Buildings', 0, 200, 1],
+            ['buildingGapRandom', 'Extra Random Gap', 0, 300, 1],
+            ['buildingLoopCount', 'Loop Count (tiles)', 2, 20, 1],
+            ['buildingSegmentLength', 'Loop Segment Length', 100, 3000, 1],
+            ['buildingColorVariation', 'Colour Variation', 0, 1, 0.05],
+            ['buildingWindowGlow', 'Window Glow', 0, 3, 0.05],
+            ['buildingLitRatio', 'Lit Windows Amount', 0, 1, 0.05],
+            ['buildingSeed', 'Random Seed (new layout)', 0, 999, 1]
+        ];
+
+        (function buildBuildingUI() {
+            const host = document.getElementById('buildingStudio');
+            let h = '<h2>BUILDINGS STUDIO</h2>';
+            h += '<div class="control-group"><label>Buildings:</label><select id="buildingsOn"><option value="1">On</option><option value="0">Off</option></select></div>';
+            h += '<div class="control-group"><label>Side Of Road:</label><select id="buildingSide"><option value="both">Both Sides</option><option value="left">Left Only</option><option value="right">Right Only</option></select></div>';
+            buildingSliderKeys.forEach(([key, label, min, max, step]) => {
+                h += `<div class="control-group"><label>${label}:</label><div class="input-pair">` +
+                     `<input type="range" id="${key}" min="${min}" max="${max}" step="${step}" value="${defaultBuildingConfig[key]}">` +
+                     `<input type="number" id="num-${key}" step="${step}" value="${defaultBuildingConfig[key]}"></div></div>`;
+            });
+            h += '<div class="control-group"><label>Building Colour:</label><input type="color" id="buildingColor" value="' + defaultBuildingConfig.buildingColor + '"></div>';
+            h += '<div class="json-section"><label>Buildings JSON Config:</label><textarea id="buildingJsonBox"></textarea>' +
+                 '<div class="btn-row"><button id="copyBuildingJson">Copy Buildings JSON</button><button id="loadBuildingJson">Load Buildings JSON</button></div>' +
+                 '<button id="resetBuildings">Reset Buildings To Default</button></div>';
+            host.innerHTML = h;
+        })();
+
+        const buildingGroup = new THREE.Group();
+        scene.add(buildingGroup);
+        let bldSegLen = 1000;
+        let bldTextures = [], bldMaterials = [];
+        const BLD_COL_W = 3.5, BLD_FLOOR_H = 4, BLD_TILE_COLS = 8, BLD_TILE_ROWS = 8;
+
+        function bldRng(seed) {
+            let a = (seed >>> 0) || 1;
+            return function () {
+                a |= 0; a = (a + 0x6D2B79F5) | 0;
+                let t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function updateBuildingJson() {
+            const box = document.getElementById('buildingJsonBox');
+            if (box) box.value = JSON.stringify(buildingConfig, null, 2);
+        }
+
+        function syncBuildingUI() {
+            buildingSliderKeys.forEach(([key]) => {
+                const r = document.getElementById(key), n = document.getElementById('num-' + key);
+                if (r) r.value = buildingConfig[key];
+                if (n) n.value = buildingConfig[key];
+            });
+            ['buildingsOn', 'buildingSide', 'buildingColor'].forEach(k => {
+                const el = document.getElementById(k);
+                if (el) el.value = buildingConfig[k];
+            });
+            updateBuildingJson();
+        }
+
+        function disposeBuildings() {
+            buildingGroup.traverse(o => { if (o.isMesh && o.geometry) o.geometry.dispose(); });
+            buildingGroup.clear();
+            bldMaterials.forEach(m => m.dispose());
+            bldTextures.forEach(t => t.dispose());
+            bldMaterials = []; bldTextures = [];
+        }
+
+        function makeBuildingTextures(rng, litRatio) {
+            const cell = 32, W = cell * BLD_TILE_COLS, H = cell * BLD_TILE_ROWS;
+            const wall = document.createElement('canvas'); wall.width = W; wall.height = H;
+            const glow = document.createElement('canvas'); glow.width = W; glow.height = H;
+            const wc = wall.getContext('2d'), gc = glow.getContext('2d');
+            wc.fillStyle = '#ffffff'; wc.fillRect(0, 0, W, H);
+            gc.fillStyle = '#000000'; gc.fillRect(0, 0, W, H);
+            for (let r = 0; r < BLD_TILE_ROWS; r++) {
+                for (let c = 0; c < BLD_TILE_COLS; c++) {
+                    const x = c * cell, y = r * cell;
+                    wc.fillStyle = '#dfe3ea'; wc.fillRect(x, y + cell - 3, cell, 3);
+                    wc.fillStyle = '#4b5d7a'; wc.fillRect(x + 7, y + 7, cell - 14, cell - 15);
+                    if (rng() < litRatio) {
+                        gc.fillStyle = '#ffd27a'; gc.fillRect(x + 7, y + 7, cell - 14, cell - 15);
+                    }
+                }
+            }
+            const mk = cv => {
+                const t = new THREE.CanvasTexture(cv);
+                t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping;
+                t.anisotropy = 4;
+                return t;
+            };
+            return [mk(wall), mk(glow)];
+        }
+
+        function rebuildBuildings() {
+            disposeBuildings();
+            const c = buildingConfig;
+            if (!parseInt(c.buildingsOn)) return;
+
+            const num = (v, d) => { const n = parseFloat(v); return isFinite(n) ? n : d; };
+            const count = Math.max(2, Math.min(40, Math.round(num(c.buildingLoopCount, 6))));
+            const seg = Math.max(20, num(c.buildingSegmentLength, 1000));
+            const zOff = num(c.buildingZOffset, 0);
+            const xOff = num(c.buildingXOffset, 70);
+            const shiftX = num(c.buildingShiftX, 0);
+            const rotY = THREE.MathUtils.degToRad(num(c.buildingRotY, 0));
+            const rows = Math.max(1, Math.min(4, Math.round(num(c.buildingRows, 1))));
+            const rowGap = Math.max(0, num(c.buildingRowGap, 0));
+            const wLo = Math.max(BLD_COL_W * 2, Math.min(num(c.buildingMinWidth, 25), num(c.buildingMaxWidth, 60)));
+            const wHi = Math.max(wLo, Math.max(num(c.buildingMinWidth, 25), num(c.buildingMaxWidth, 60)));
+            const dLo = Math.max(BLD_COL_W * 2, Math.min(num(c.buildingMinDepth, 25), num(c.buildingMaxDepth, 50)));
+            const dHi = Math.max(dLo, Math.max(num(c.buildingMinDepth, 25), num(c.buildingMaxDepth, 50)));
+            const hLo = Math.max(BLD_FLOOR_H * 2, Math.min(num(c.buildingMinHeight, 40), num(c.buildingMaxHeight, 220)));
+            const hHi = Math.max(hLo, Math.max(num(c.buildingMinHeight, 40), num(c.buildingMaxHeight, 220)));
+            const gap = Math.max(0, num(c.buildingGap, 6));
+            const gapRand = Math.max(0, num(c.buildingGapRandom, 0));
+            const seed = Math.round(num(c.buildingSeed, 0));
+            const sides = c.buildingSide === 'left' ? [-1] : c.buildingSide === 'right' ? [1] : [-1, 1];
+
+            bldSegLen = seg;
+            buildingGroup.position.y = physics.carY + num(c.buildingYOffset, 0);
+
+            // textures + a small pool of tinted wall materials
+            const texRng = bldRng(seed * 31 + 5);
+            const [wallTex, glowTex] = makeBuildingTextures(texRng, Math.max(0, Math.min(1, num(c.buildingLitRatio, 0.35))));
+            bldTextures = [wallTex, glowTex];
+            const base = new THREE.Color(c.buildingColor || '#8b9bb4');
+            const variation = Math.max(0, Math.min(1, num(c.buildingColorVariation, 0.3)));
+            const hsl = {}; base.getHSL(hsl);
+            const glowAmt = Math.max(0, num(c.buildingWindowGlow, 0.6));
+            const palRng = bldRng(seed * 17 + 3);
+            const sideMats = [];
+            for (let i = 0; i < 8; i++) {
+                const col = new THREE.Color().setHSL(
+                    (hsl.h + (palRng() - 0.5) * 0.1 * variation + 1) % 1,
+                    Math.max(0, Math.min(1, hsl.s * (1 + (palRng() - 0.5) * variation))),
+                    Math.max(0.05, Math.min(0.95, hsl.l + (palRng() - 0.5) * 0.5 * variation))
+                );
+                sideMats.push(new THREE.MeshStandardMaterial({
+                    color: col, map: wallTex, emissive: new THREE.Color(0xffffff), emissiveMap: glowTex,
+                    emissiveIntensity: glowAmt, roughness: 0.75, metalness: 0.05
+                }));
+            }
+            const topMat = new THREE.MeshStandardMaterial({ color: base.clone().multiplyScalar(0.55), roughness: 0.9, metalness: 0 });
+            bldMaterials = sideMats.concat([topMat]);
+
+            const carZ = carContainer.position.z;
+            const k0 = Math.floor((carZ - zOff) / seg) - 1;
+
+            for (let i = 0; i < count; i++) {
+                const chunk = new THREE.Group();
+                chunk.position.z = zOff + (k0 + i) * seg;
+                const rng = bldRng(seed * 1000 + i * 7919 + 13);
+
+                sides.forEach(side => {
+                    for (let r = 0; r < rows; r++) {
+                        const rowStart = xOff + r * (dHi + rowGap);
+                        let cursor = rng() * wHi * 0.5;
+                        let guard = 0;
+                        while (cursor < seg - BLD_COL_W * 2 && guard++ < 500) {
+                            let w = wLo + rng() * (wHi - wLo);
+                            let d = dLo + rng() * (dHi - dLo);
+                            let h = hLo + rng() * (hHi - hLo);
+                            const matIdx = Math.floor(rng() * sideMats.length);
+                            const uOff = Math.floor(rng() * BLD_TILE_COLS) / BLD_TILE_COLS;
+                            const nextGap = gap + rng() * gapRand;
+
+                            if (cursor + w > seg) w = seg - cursor;
+                            w = Math.floor(w / BLD_COL_W) * BLD_COL_W;
+                            if (w < BLD_COL_W * 2) break;
+                            d = Math.max(BLD_COL_W * 2, Math.round(d / BLD_COL_W) * BLD_COL_W);
+                            h = Math.max(BLD_FLOOR_H * 2, Math.round(h / BLD_FLOOR_H) * BLD_FLOOR_H);
+
+                            const geo = new THREE.BoxGeometry(d, h, w);
+                            const uv = geo.attributes.uv;
+                            // face order: +x, -x, +y, -y, +z, -z (4 verts each)
+                            for (let v = 0; v < uv.count; v++) {
+                                const face = Math.floor(v / 4);
+                                if (face === 2 || face === 3) continue;
+                                const horiz = face < 2 ? w : d;
+                                const tileW = BLD_COL_W * BLD_TILE_COLS, tileH = BLD_FLOOR_H * BLD_TILE_ROWS;
+                                uv.setXY(v, uv.getX(v) * horiz / tileW + uOff, uv.getY(v) * h / tileH);
+                            }
+                            uv.needsUpdate = true;
+
+                            const sm = sideMats[matIdx];
+                            const mesh = new THREE.Mesh(geo, [sm, sm, topMat, topMat, sm, sm]);
+                            mesh.position.set(side * (rowStart + d / 2) + shiftX, h / 2, cursor + w / 2);
+                            mesh.rotation.y = rotY;
+                            mesh.castShadow = false; mesh.receiveShadow = false;
+                            chunk.add(mesh);
+                            cursor += w + nextGap;
+                        }
+                    }
+                });
+                buildingGroup.add(chunk);
+            }
+            if (typeof applyEnvIntensity === 'function') applyEnvIntensity();
+        }
+
+        // wire up controls
+        buildingSliderKeys.forEach(([key]) => bindInputPair(key, buildingConfig, () => {
+            if (key === 'buildingYOffset') buildingGroup.position.y = physics.carY + (parseFloat(buildingConfig.buildingYOffset) || 0);
+            rebuildBuildings();
+        }));
+        ['buildingsOn', 'buildingSide'].forEach(k => document.getElementById(k).addEventListener('change', e => {
+            buildingConfig[k] = e.target.value; rebuildBuildings(); updateBuildingJson();
+        }));
+        document.getElementById('buildingColor').addEventListener('input', e => {
+            buildingConfig.buildingColor = e.target.value; rebuildBuildings(); updateBuildingJson();
+        });
+        document.getElementById('copyBuildingJson').addEventListener('click', () => {
+            const box = document.getElementById('buildingJsonBox');
+            box.select(); navigator.clipboard.writeText(box.value); alert('Buildings JSON copied!');
+        });
+        document.getElementById('loadBuildingJson').addEventListener('click', () => {
+            sanitizeAndLoadJson(document.getElementById('buildingJsonBox').value, buildingConfig, defaultBuildingConfig, () => { syncBuildingUI(); rebuildBuildings(); });
+        });
+        document.getElementById('resetBuildings').addEventListener('click', () => {
+            Object.assign(buildingConfig, defaultBuildingConfig); syncBuildingUI(); rebuildBuildings();
+        });
+        syncBuildingUI();
+        bldReady = true;
+
+        const carContainer = new THREE.Group();
+        carContainer.position.set(0, 99.5, 0);
+        scene.add(carContainer);
+
+        const carModelGroup = new THREE.Group();
+        carContainer.add(carModelGroup);
+
+        const bodyGeo = new THREE.BoxGeometry(2, 0.8, 4.2);
+        const carBody = new THREE.Mesh(bodyGeo, mirrorMaterial);
+        carBody.position.y = 0.4; carBody.castShadow = true;
+        carModelGroup.add(carBody);
+
+        const roofGeo = new THREE.BoxGeometry(1.6, 0.6, 2.2);
+        const carRoof = new THREE.Mesh(roofGeo, roofMirrorMaterial);
+        carRoof.position.set(0, 1.1, -0.2); carRoof.castShadow = true;
+        carModelGroup.add(carRoof);
+
+        const aiGroup = new THREE.Group();
+        scene.add(aiGroup);
+        let baseCarSourceModel = null;
+
+        let trafficModels = [
+            { "name": "mazda3.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 0.8, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 },
+            { "name": "FINAL_MODEL_GTS.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 1, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 }
+        ];
+        let playerCarName = '';
+
+        const DEFAULT_HITBOX = { hbW: 2, hbH: 1.5, hbL: 3.5, hbX: 0, hbY: 0.75, hbZ: 0 };
+        const PLAYER_HALF_X = 1.0;
+        const PLAYER_HALF_Z = 1.75;
+        let hitboxEditEntry = null;
+        let showAllHitboxes = false;
+        const tmpHitBox = new THREE.Box3();
+        const hitBoxGeo = new THREE.BoxGeometry(1, 1, 1);
+        const hitEdgeGeo = new THREE.EdgesGeometry(hitBoxGeo);
+        const hitFillMat = new THREE.MeshBasicMaterial({ color: 0xff2d55, transparent: true, opacity: 0.22, depthTest: false, depthWrite: false, fog: false });
+        const hitLineMat = new THREE.LineBasicMaterial({ color: 0xff2d55, depthTest: false, fog: false });
+
+                // ===== LICENSE PLATES =====
+        const DEFAULT_PLATE = {
+            plateOn: 1, plateText: "licos0", plateW: 0.44, plateH: 0.15,
+            plateX: 0, plateY: 0.69, plateZ: -2.31,
+            plateRotX: 14, plateRotY: 180, plateRotZ: 0
+        };
+        const PLATE_KEYS = Object.keys(DEFAULT_PLATE);
+        let playerPlate = Object.assign({}, DEFAULT_PLATE);
+        trafficModels.forEach(m => PLATE_KEYS.forEach(k => { if (m[k] === undefined) m[k] = DEFAULT_PLATE[k]; }));
+
+        function platePick(m) { const o = {}; PLATE_KEYS.forEach(k => o[k] = m[k]); return o; }
+        function plateFromItem(item) {
+            const o = {};
+            PLATE_KEYS.forEach(k => {
+                const v = item[k];
+                if (k === 'plateText') o[k] = typeof v === 'string' ? v : DEFAULT_PLATE[k];
+                else if (k === 'plateOn') o[k] = (v === 0 || v === false) ? 0 : 1;
+                else o[k] = (typeof v === 'number' && isFinite(v)) ? v : DEFAULT_PLATE[k];
+            });
+            return o;
+        }
+
+        const plateGeo = new THREE.PlaneGeometry(1, 1);
+        const plateTexCache = new Map();
+        function randomPlateText() {
+            const L = 'ABCDEFGHJKLMNPRSTUVWXYZ', D = '0123456789';
+            const p = (s, n) => Array.from({ length: n }, () => s[Math.floor(Math.random() * s.length)]).join('');
+            return p(L, 3) + ' ' + p(D, 3);
+        }
+        function getPlateTexture(text, w, h) {
+            const aspect = Math.max(0.2, Math.min(8, w / Math.max(0.01, h)));
+            const key = text + '|' + aspect.toFixed(2);
+            if (plateTexCache.has(key)) return plateTexCache.get(key);
+            if (plateTexCache.size > 300) { plateTexCache.forEach(t => t.dispose()); plateTexCache.clear(); }
+            const cw = 512, ch = Math.max(32, Math.round(512 / aspect));
+            const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+            const g = c.getContext('2d');
+            g.fillStyle = '#000'; g.fillRect(0, 0, cw, ch);
+            const b = Math.max(3, Math.min(cw, ch) * 0.06);
+            g.fillStyle = '#fff'; g.fillRect(b, b, cw - 2 * b, ch - 2 * b);
+            g.fillStyle = '#000'; g.textAlign = 'center'; g.textBaseline = 'middle';
+            let fs = (ch - 2 * b) * 0.7;
+            g.font = `bold ${fs}px monospace`;
+            const tw = g.measureText(text).width, maxW = cw - 4 * b;
+            if (tw > maxW) { fs *= maxW / tw; g.font = `bold ${fs}px monospace`; }
+            g.fillText(text, cw / 2, ch / 2 + fs * 0.04);
+            const tex = new THREE.CanvasTexture(c); tex.anisotropy = 4;
+            plateTexCache.set(key, tex);
+            return tex;
+        }
+        function makePlateMesh() {
+            const m = new THREE.Mesh(plateGeo, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, toneMapped: false }));
+            m.userData.isPlate = true; m.castShadow = false;
+            return m;
+        }
+        // geometry comes from cfg, the text is passed in separately
+        function applyPlate(mesh, cfg, text) {
+            mesh.visible = !!cfg.plateOn;
+            if (!cfg.plateOn) return;
+            mesh.position.set(cfg.plateX, cfg.plateY, cfg.plateZ);
+            mesh.rotation.set(THREE.MathUtils.degToRad(cfg.plateRotX), THREE.MathUtils.degToRad(cfg.plateRotY), THREE.MathUtils.degToRad(cfg.plateRotZ));
+            mesh.scale.set(cfg.plateW, cfg.plateH, 1);
+            const first = !mesh.material.map;
+            mesh.material.map = getPlateTexture(text, cfg.plateW, cfg.plateH);
+            if (first) mesh.material.needsUpdate = true;
+        }
+        const playerPlateGroup = new THREE.Group(); carContainer.add(playerPlateGroup);
+        const playerPlateMesh = makePlateMesh(); playerPlateGroup.add(playerPlateMesh);
+
+        // If your car file matches a traffic car, it uses that car's plate settings (and its text field).
+        function getPlayerPlateCfg() {
+            const n = playerCarName ? playerCarName.toLowerCase() : '';
+            return (n && trafficModels.find(m => m.name.toLowerCase() === n)) || playerPlate;
+        }
+        function refreshPlates() {
+            aiGroup.children.forEach(car => {
+                const pm = car.userData.plateMesh; if (!pm) return;
+                const e = car.userData.entry;
+                if (!e) { pm.visible = false; return; }
+                applyPlate(pm, e, car.userData.plateRand); // AI plates are always random
+            });
+            const pc = getPlayerPlateCfg();
+            applyPlate(playerPlateMesh, pc, (pc.plateText && pc.plateText.trim() !== '') ? pc.plateText : 'PLAYER');
+        }
+        function renewPlate(car) {
+            car.userData.plateRand = randomPlateText();
+            if (car.userData.entry && car.userData.plateMesh) applyPlate(car.userData.plateMesh, car.userData.entry, car.userData.plateRand);
+        }
+
+        function makePlateEditor(cfg, onChange, hint) {
+            const wrap = document.createElement('div');
+            const top = document.createElement('div');
+            top.style.cssText = 'display:grid;grid-template-columns:90px 1fr;gap:4px;margin-top:4px;';
+            const sel = document.createElement('select');
+            sel.innerHTML = '<option value="1">Plate On</option><option value="0">Plate Off</option>';
+            sel.value = cfg.plateOn ? '1' : '0';
+            sel.addEventListener('change', () => { cfg.plateOn = parseInt(sel.value); onChange(); });
+            const txt = document.createElement('input');
+            txt.type = 'text'; txt.className = 'plate-text'; txt.maxLength = 16; txt.placeholder = hint; txt.value = cfg.plateText || '';
+            txt.addEventListener('input', () => { cfg.plateText = txt.value; onChange(); });
+            top.appendChild(sel); top.appendChild(txt); wrap.appendChild(top);
+            const fields = document.createElement('div'); fields.className = 'traffic-fields pl';
+            [['plateW', 'Width', 0.01], ['plateH', 'Height', 0.01], ['plateX', 'Pos X', 0.01], ['plateY', 'Pos Y', 0.01], ['plateZ', 'Pos Z', 0.01], ['plateRotX', 'Rot X', 1], ['plateRotY', 'Rot Y', 1], ['plateRotZ', 'Rot Z', 1]].forEach(([k, label, step]) => {
+                const cell = document.createElement('div');
+                const lab = document.createElement('span'); lab.textContent = label;
+                const inp = document.createElement('input'); inp.type = 'number'; inp.step = step; inp.value = cfg[k];
+                inp.addEventListener('input', () => { const v = parseFloat(inp.value); if (!isNaN(v)) { cfg[k] = v; onChange(); } });
+                cell.appendChild(lab); cell.appendChild(inp); fields.appendChild(cell);
+            });
+            wrap.appendChild(fields);
+            return wrap;
+        }
+
+        function updatePlayerPlateJson() { document.getElementById('playerPlateJsonBox').value = JSON.stringify(playerPlate, null, 2); }
+        function renderPlayerPlateUI() {
+            const el = document.getElementById('playerPlateUI'); if (!el) return;
+            el.innerHTML = '';
+            const n = playerCarName ? playerCarName.toLowerCase() : '';
+            const match = n && trafficModels.find(m => m.name.toLowerCase() === n);
+            if (match) {
+                const note = document.createElement('div');
+                note.style.cssText = 'font-size:11px;color:#64748b;margin-bottom:6px;';
+                note.textContent = 'Using the plate from traffic car "' + match.name + '". Edit its size, position and your text in the Traffic Car Models list.';
+                el.appendChild(note);
+            } else {
+                el.appendChild(makePlateEditor(playerPlate, () => { refreshPlates(); updatePlayerPlateJson(); }, 'Your plate text'));
+            }
+            refreshPlates();
+        }
+        document.getElementById('copyPlayerPlateJson').addEventListener('click', () => {
+            const box = document.getElementById('playerPlateJsonBox'); box.select(); navigator.clipboard.writeText(box.value); alert('Player plate JSON copied!');
+        });
+        document.getElementById('loadPlayerPlateJson').addEventListener('click', () => {
+            try {
+                playerPlate = plateFromItem(JSON.parse(document.getElementById('playerPlateJsonBox').value));
+                renderPlayerPlateUI(); updatePlayerPlateJson(); alert('Player plate JSON loaded!');
+            } catch (err) { alert('Invalid plate JSON.'); }
+        });
+        renderPlayerPlateUI(); updatePlayerPlateJson();
+        // ===== END LICENSE PLATES =====
+
+        // ===== SPEEDOMETER (drag to move, scroll to resize) =====
+        const speedoEl = document.getElementById('speedo');
+        const speedoCtx = document.getElementById('speedoCanvas').getContext('2d');
+        let lastSK = -1, lastSG = -1, lastSM = -1;
+        function niceStep(max) {
+            const raw = max / 12;
+            return [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000].find(v => v >= raw) || 10000;
+        }
+        function drawSpeedo(kph, gear) {
+            const max = Math.max(280, Math.ceil(physics.topSpeed * 40 / 20) * 20);
+            if (kph === lastSK && gear === lastSG && max === lastSM) return;
+            lastSK = kph; lastSG = gear; lastSM = max;
+            const g = speedoCtx, cx = 160, cy = 160, FONT = 'Roboto, sans-serif';
+            g.clearRect(0, 0, 320, 320); // the blurred glass background comes from CSS
+            const a0 = Math.PI * 0.75, sweep = Math.PI * 1.5;
+            const frac = Math.min(1, Math.max(0, kph / max));
+            // thin track + white progress arc
+            g.lineCap = 'round'; g.lineWidth = 4;
+            g.beginPath(); g.arc(cx, cy, 138, a0, a0 + sweep); g.strokeStyle = 'rgba(255,255,255,0.18)'; g.stroke();
+            if (frac > 0.002) { g.beginPath(); g.arc(cx, cy, 138, a0, a0 + sweep * frac); g.strokeStyle = '#ffffff'; g.stroke(); }
+            // ticks + numbers (black & white only)
+            const minor = niceStep(max) / 2, n = Math.round(max / minor);
+            g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineCap = 'butt';
+            for (let i = 0; i <= n; i++) {
+                const v = i * minor, isMaj = i % 2 === 0;
+                const a = a0 + sweep * Math.min(1, v / max);
+                const r1 = isMaj ? 112 : 120, r2 = 127;
+                g.beginPath();
+                g.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+                g.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+                g.lineWidth = isMaj ? 2.5 : 1.2; g.strokeStyle = isMaj ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.4)'; g.stroke();
+                if (isMaj) {
+                    g.fillStyle = 'rgba(255,255,255,0.85)'; g.font = '500 14px ' + FONT;
+                    g.fillText(String(Math.round(v)), cx + Math.cos(a) * 92, cy + Math.sin(a) * 92);
+                }
+            }
+            g.fillStyle = 'rgba(255,255,255,0.7)'; g.font = '700 12px ' + FONT; g.fillText('GEAR ' + gear + (gear === 7 ? ' OD' : ''), cx, cy - 40);
+            g.fillStyle = '#ffffff'; g.font = '500 46px ' + FONT; g.fillText(String(kph), cx, cy + 52);
+            g.fillStyle = 'rgba(255,255,255,0.6)'; g.font = '700 12px ' + FONT; g.fillText('KPH', cx, cy + 82);
+            // slim needle
+            const na = a0 + sweep * frac;
+            g.beginPath();
+            g.moveTo(cx - Math.cos(na) * 14, cy - Math.sin(na) * 14);
+            g.lineTo(cx + Math.cos(na) * 104, cy + Math.sin(na) * 104);
+            g.lineWidth = 2.5; g.lineCap = 'round'; g.strokeStyle = '#ffffff'; g.stroke();
+            g.beginPath(); g.arc(cx, cy, 7, 0, Math.PI * 2); g.fillStyle = '#ffffff'; g.fill();
+            g.beginPath(); g.arc(cx, cy, 3, 0, Math.PI * 2); g.fillStyle = '#000000'; g.fill();
+        }
+        let speedoDrag = null;
+        speedoEl.addEventListener('mousedown', e => e.stopPropagation());
+        speedoEl.addEventListener('pointerdown', e => {
+            const r = speedoEl.getBoundingClientRect();
+            speedoDrag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+            speedoEl.classList.add('dragging'); speedoEl.setPointerCapture(e.pointerId); e.preventDefault();
+        });
+        speedoEl.addEventListener('pointermove', e => {
+            if (!speedoDrag) return;
+            const x = Math.max(0, Math.min(window.innerWidth - speedoEl.offsetWidth, e.clientX - speedoDrag.dx));
+            const y = Math.max(0, Math.min(window.innerHeight - speedoEl.offsetHeight, e.clientY - speedoDrag.dy));
+            speedoEl.style.left = x + 'px'; speedoEl.style.top = y + 'px';
+        });
+        const endSpeedoDrag = () => { speedoDrag = null; speedoEl.classList.remove('dragging'); };
+        speedoEl.addEventListener('pointerup', endSpeedoDrag);
+        speedoEl.addEventListener('pointercancel', endSpeedoDrag);
+        speedoEl.addEventListener('wheel', e => {
+            e.preventDefault();
+            const s = Math.max(90, Math.min(420, speedoEl.offsetWidth * (e.deltaY < 0 ? 1.08 : 0.93)));
+            speedoEl.style.width = speedoEl.style.height = s + 'px';
+        }, { passive: false });
+        drawSpeedo(0, 1);
+        if (document.fonts && document.fonts.load) document.fonts.load('500 16px Roboto').then(() => { const k = lastSK, gr = lastSG; lastSK = -1; drawSpeedo(k < 0 ? 0 : k, gr < 0 ? 1 : gr); });
+        // ===== END SPEEDOMETER =====
+
+        
+        function refreshHitboxes() {
+            aiGroup.children.forEach(car => {
+                const hg = car.userData.hitGroup;
+                if (!hg) return;
+                const src = car.userData.entry || DEFAULT_HITBOX;
+                hg.position.set(src.hbX, src.hbY, src.hbZ);
+                hg.scale.set(src.hbW, src.hbH, src.hbL);
+                hg.visible = showAllHitboxes || (!!hitboxEditEntry && car.userData.entry === hitboxEditEntry);
+            });
+        }
+
+        function makeAiVisual(carIndex) {
+            const wrapper = new THREE.Group();
+            wrapper.userData.entry = null;
+            const loaded = trafficModels.filter(m => m.source && !isPlayerCarEntry(m));
+            if (loaded.length > 0) {
+                const entry = loaded[carIndex % loaded.length];
+                wrapper.userData.entry = entry;
+                const modelClone = entry.source.clone(true);
+                modelClone.position.set(entry.posX || 0, entry.posY || 0, entry.posZ || 0);
+                wrapper.add(modelClone);
+                wrapper.rotation.set(THREE.MathUtils.degToRad(entry.rotX), THREE.MathUtils.degToRad(entry.rotY), THREE.MathUtils.degToRad(entry.rotZ));
+                wrapper.scale.set(entry.scale, entry.scale, entry.scale);
+            } else if (baseCarSourceModel) {
+                wrapper.add(baseCarSourceModel.clone(true));
+            } else {
+                const defaultAiBody = new THREE.Mesh(bodyGeo, mirrorMaterial);
+                defaultAiBody.position.y = 0.4; defaultAiBody.castShadow = true;
+                wrapper.add(defaultAiBody);
+            }
+            return wrapper;
+        }
+
+        function buildAiCar(carIdx, side) {
+            const container = new THREE.Group();
+            const visual = makeAiVisual(carIdx);
+            container.add(visual);
+
+            const hitGroup = new THREE.Group();
+            const fill = new THREE.Mesh(hitBoxGeo, hitFillMat);
+            const edges = new THREE.LineSegments(hitEdgeGeo, hitLineMat);
+            fill.userData.isHitbox = true; edges.userData.isHitbox = true;
+            fill.renderOrder = 999; edges.renderOrder = 999;
+            hitGroup.add(fill); hitGroup.add(edges);
+            hitGroup.visible = false;
+            container.add(hitGroup);
+
+            const plateMesh = makePlateMesh(); container.add(plateMesh);
+            container.userData = { passed: false, side: side, entry: visual.userData.entry, hitGroup: hitGroup, plateMesh: plateMesh, plateRand: randomPlateText() };
+            return container;
+        }
+
+        function rebuildAiCars() {
+            aiGroup.clear();
+            let carIdx = 0;
+
+            if (propConfig.aiMode === 'pattern') {
+                let matrix = propConfig.patternMatrix || defaultPropConfig.patternMatrix;
+                for (let r = 0; r < matrix.length; r++) {
+                    for (let c = 0; c < 2; c++) {
+                        if (matrix[r][c] === 1) {
+                            const aiCarContainer = buildAiCar(carIdx++, 'same');
+                            const laneX = (c === 0 ? -propConfig.aiOffsetX : propConfig.aiOffsetX) + propConfig.aiLaneNudge;
+                            const rowZ = -40 - (r * propConfig.aiSpacingZ);
+                            aiCarContainer.position.set(laneX, physics.carY + propConfig.aiOffsetY, rowZ);
+                            aiCarContainer.rotation.y = THREE.MathUtils.degToRad(propConfig.aiRotY);
+                            aiCarContainer.scale.set(physics.carScale, physics.carScale, physics.carScale);
+                            aiGroup.add(aiCarContainer);
+                        }
+                    }
+                }
+            } else {
+                for (let i = 0; i < 8; i++) {
+                    const aiCarContainer = buildAiCar(carIdx++, 'same');
+                    const sideDir = (i % 2 === 0 ? 1 : -1);
+                    const laneX = (sideDir * propConfig.aiOffsetX) + propConfig.aiLaneNudge;
+                    aiCarContainer.position.set(laneX, physics.carY + propConfig.aiOffsetY, -35 - (i * 40));
+                    aiCarContainer.rotation.y = THREE.MathUtils.degToRad(propConfig.aiRotY);
+                    aiCarContainer.scale.set(physics.carScale, physics.carScale, physics.carScale);
+                    aiGroup.add(aiCarContainer);
+                }
+            }
+
+            if (propConfig.oppMode === 'pattern') {
+                let matrix = propConfig.oppPatternMatrix || defaultPropConfig.oppPatternMatrix;
+                for (let r = 0; r < matrix.length; r++) {
+                    for (let c = 0; c < 2; c++) {
+                        if (matrix[r][c] === 1) {
+                            const oppCar = buildAiCar(carIdx++, 'opp');
+                            const laneX = (c === 0 ? -propConfig.oppOffsetX : propConfig.oppOffsetX) + propConfig.oppLaneNudge;
+                            const rowZ = 40 + (r * propConfig.oppSpacingZ);
+                            oppCar.position.set(laneX, physics.carY + propConfig.oppOffsetY, rowZ);
+                            oppCar.rotation.y = THREE.MathUtils.degToRad(propConfig.oppRotY);
+                            oppCar.scale.set(physics.carScale, physics.carScale, physics.carScale);
+                            aiGroup.add(oppCar);
+                        }
+                    }
+                }
+            } else if (propConfig.oppMode === 'random') {
+                for (let i = 0; i < 8; i++) {
+                    const oppCar = buildAiCar(carIdx++, 'opp');
+                    const sideDir = (i % 2 === 0 ? 1 : -1);
+                    const laneX = (sideDir * propConfig.oppOffsetX) + propConfig.oppLaneNudge;
+                    oppCar.position.set(laneX, physics.carY + propConfig.oppOffsetY, 35 + (i * 40));
+                    oppCar.rotation.y = THREE.MathUtils.degToRad(propConfig.oppRotY);
+                    oppCar.scale.set(physics.carScale, physics.carScale, physics.carScale);
+                    aiGroup.add(oppCar);
+                }
+            }
+
+            applyCarShadows();
+            refreshHitboxes(); refreshPlates();
+        }
+
+        const skyInput = document.getElementById('skyUpload');
+        skyInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function (event) {
+                const url = URL.createObjectURL(new Blob([event.target.result]));
+                if (fileName.endsWith('.hdr')) {
+                    new THREE.RGBELoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                } else if (fileName.endsWith('.exr')) {
+                    new THREE.EXRLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                } else {
+                    new THREE.TextureLoader().load(url, (t) => { t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; });
+                }
+            };
+        });
+
+        const highwayInput = document.getElementById('highwayUpload');
+        highwayInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function (event) {
+                new THREE.GLTFLoader().parse(event.target.result, '', (gltf) => {
+                    baseHighwaySource = gltf.scene; baseHighwayParts = null;
+                    baseHighwaySource.traverse(child => {
+                        if (child.isMesh) {
+                            child.castShadow = false; child.receiveShadow = true;
+                            if (child.material) { child.material.side = THREE.FrontSide; child.material.needsUpdate = true; }
+                        }
+                    });
+                    rebuildHighwayLoops(); applyEnvIntensity(); alert('Highway model loaded successfully!');
+                });
+            };
+        });
+
+        updateUIFromState();
+
+        const envKeys = Object.keys(defaultEnvConfig);
+        const envJsonBox = document.getElementById('envJsonBox');
+
+        function applyCarShadows() {
+            const on = !!envConfig.carShadows;
+            const setCast = (root) => root.traverse(o => { if (o.isMesh && !o.userData.isHitbox && !o.userData.isPlate) o.castShadow = on; });
+            setCast(carModelGroup); setCast(aiGroup);
+        }
+
+        function applyTrafficReflections() {
+            const on = !!envConfig.trafficReflections;
+            const seen = new Set();
+            const handle = (o) => {
+                if (!o.isMesh || !o.material) return;
+                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                mats.forEach(m => {
+                    if (seen.has(m)) return;
+                    seen.add(m);
+                    if (!m.userData.origRefl) m.userData.origRefl = { metalness: m.metalness, roughness: m.roughness, envMap: m.envMap, envMapIntensity: m.envMapIntensity };
+                    if (m.userData.reflState === on) return;
+                    m.userData.reflState = on;
+                    const orig = m.userData.origRefl;
+                    if (on) {
+                        if (m.metalness !== undefined) m.metalness = 1.0;
+                        if (m.roughness !== undefined) m.roughness = 0.0;
+                        m.envMap = cubeRenderTarget.texture; m.envMapIntensity = 3.0; m.userData.baseEnvIntensity = 3.0;
+                    } else {
+                        if (orig.metalness !== undefined) m.metalness = orig.metalness;
+                        if (orig.roughness !== undefined) m.roughness = orig.roughness;
+                        m.envMap = orig.envMap; m.envMapIntensity = orig.envMapIntensity !== undefined ? orig.envMapIntensity : 1; m.userData.baseEnvIntensity = m.envMapIntensity;
+                    }
+                    m.needsUpdate = true;
+                });
+            };
+            trafficModels.forEach(t => { if (t.source) t.source.traverse(handle); });
+        }
+
+        function applyEnvIntensity() {
+            const seen = new Set();
+            const handle = (o) => {
+                if (!o.isMesh || !o.material) return;
+                const mats = Array.isArray(o.material) ? o.material : [o.material];
+                mats.forEach(m => {
+                    if (!m.isMeshStandardMaterial || seen.has(m)) return;
+                    seen.add(m);
+                    if (m.userData.baseEnvIntensity === undefined) m.userData.baseEnvIntensity = m.envMapIntensity;
+                    m.envMapIntensity = m.userData.baseEnvIntensity * envConfig.envBrightness;
+                });
+            };
+            scene.traverse(handle);
+            if (baseCarSourceModel) baseCarSourceModel.traverse(handle);
+            trafficModels.forEach(t => { if (t.source) t.source.traverse(handle); });
+        }
+
+        const lightDirVec = new THREE.Vector3();
+        function placeLight(light, azimuthDeg, elevationDeg) {
+            const az = THREE.MathUtils.degToRad(azimuthDeg);
+            const el = THREE.MathUtils.degToRad(elevationDeg);
+            lightDirVec.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+            const c = carContainer.position;
+            light.position.set(c.x + lightDirVec.x * 300, c.y + lightDirVec.y * 300, c.z + lightDirVec.z * 300);
+            light.target.position.copy(c); light.target.updateMatrixWorld();
+        }
+
+        function updateLightPositions() {
+            placeLight(dirLight, envConfig.sunAzimuth, envConfig.sunElevation);
+            placeLight(moonLight, envConfig.moonAzimuth, envConfig.moonElevation);
+        }
+
+        dirLight.shadow.camera.near = 1; dirLight.shadow.camera.far = 800; dirLight.shadow.bias = -0.0005; dirLight.shadow.normalBias = 0.3;
+
+        function applyEnvironment() {
+            renderer.toneMappingExposure = envConfig.baseBrightness;
+            ambientLight.intensity = envConfig.ambientIntensity; ambientLight.color.set(envConfig.ambientColor);
+            dirLight.intensity = envConfig.sunIntensity; dirLight.color.set(envConfig.sunColor);
+            moonLight.intensity = envConfig.moonIntensity; moonLight.color.set(envConfig.moonColor);
+            const q = envConfig.shadowQuality;
+            if (dirLight.shadow.mapSize.x !== q) {
+                dirLight.shadow.mapSize.set(q, q);
+                if (dirLight.shadow.map) { dirLight.shadow.map.dispose(); dirLight.shadow.map = null; }
+            }
+            const sd = envConfig.shadowDistance;
+            const sc = dirLight.shadow.camera;
+            sc.left = -sd; sc.right = sd; sc.top = sd; sc.bottom = -sd;
+            sc.updateProjectionMatrix();
+            applyCarShadows(); applyTrafficReflections(); applyEnvIntensity(); updateLightPositions();
+        }
+
+        function updateEnvJson() { envJsonBox.value = JSON.stringify(envConfig, null, 2); }
+        function syncEnvUI() {
+            envKeys.forEach(k => {
+                const el = document.getElementById(k); if (el) el.value = envConfig[k];
+                const n = document.getElementById('num-' + k); if (n) n.value = envConfig[k];
+            });
+        }
+
+        envKeys.forEach(k => {
+            const el = document.getElementById(k);
+            const n = document.getElementById('num-' + k);
+            if (!el) return;
+            const isText = typeof defaultEnvConfig[k] === 'string';
+            const onChange = (ev) => {
+                const v = isText ? ev.target.value : parseFloat(ev.target.value);
+                if (!isText && isNaN(v)) return;
+                envConfig[k] = v;
+                if (el !== ev.target) el.value = v;
+                if (n && n !== ev.target) n.value = v;
+                applyEnvironment(); updateEnvJson();
+            };
+            el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', onChange);
+            if (n) n.addEventListener('input', onChange);
+        });
+
+        document.getElementById('copyEnvJson').addEventListener('click', () => {
+            envJsonBox.select(); navigator.clipboard.writeText(envJsonBox.value); alert('Lighting JSON copied!');
+        });
+        document.getElementById('loadEnvJson').addEventListener('click', () => {
+            try {
+                const parsed = JSON.parse(envJsonBox.value);
+                envKeys.forEach(k => {
+                    if (!parsed.hasOwnProperty(k)) return;
+                    const v = parsed[k];
+                    if (typeof defaultEnvConfig[k] === 'string') {
+                        if (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) envConfig[k] = v;
+                    } else if (typeof v === 'number' && isFinite(v)) envConfig[k] = v;
+                });
+                syncEnvUI(); applyEnvironment(); updateEnvJson(); alert('Lighting JSON loaded!');
+            } catch (err) { alert('Invalid JSON.'); }
+        });
+
+        let sceneTarget = null, dofTarget = null, depthTarget = null;
+        const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        const postVertex = `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+
+        function makePostScene(material) {
+            const sc = new THREE.Scene();
+            const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+            quad.frustumCulled = false; sc.add(quad);
+            return sc;
+        }
+
+        const blurMaterial = new THREE.ShaderMaterial({
+            uniforms: { tDiffuse: { value: null }, strength: { value: 0.0 } },
+            vertexShader: postVertex,
+            fragmentShader: `uniform sampler2D tDiffuse; uniform float strength; varying vec2 vUv; void main() { vec2 dir = vUv - vec2(0.5); vec4 sum = vec4(0.0); float total = 0.0; for(int i=0; i<12; i++){ float t = float(i)/11.0; float w = 1.0 - t*0.5; sum += texture2D(tDiffuse, vUv - dir * strength * t) * w; total += w; } gl_FragColor = sum / total; }`,
+            depthTest: false, depthWrite: false
+        });
+        const blurPassScene = makePostScene(blurMaterial);
+
+        const dofMaterial = new THREE.ShaderMaterial({
+            uniforms: { tColor: { value: null }, tDepth: { value: null }, cameraNear: { value: 0.1 }, cameraFar: { value: 10000.0 }, focus: { value: 10.0 }, strength: { value: 0.0 }, aspect: { value: 1.0 } },
+            vertexShader: postVertex,
+            fragmentShader: `#include <packing>\nuniform sampler2D tColor; uniform sampler2D tDepth; uniform float cameraNear; uniform float cameraFar; uniform float focus; uniform float strength; uniform float aspect; varying vec2 vUv; float viewDist(vec2 uv) { float d = unpackRGBAToDepth(texture2D(tDepth, uv)); return -perspectiveDepthToViewZ(d, cameraNear, cameraFar); } float cocAt(float dist) { return clamp(abs(dist - focus) / (focus * 3.0 + 1.0), 0.0, 1.0); } void main() { float centerDist = viewDist(vUv); float radius = cocAt(centerDist) * strength * 0.035; vec4 sum = texture2D(tColor, vUv); float total = 1.0; for (int i = 1; i <= 20; i++) { float fi = float(i); float ang = fi * 2.399963; float r = sqrt(fi / 20.0); vec2 uv = vUv + vec2(cos(ang) / aspect, sin(ang)) * r * radius; float sd = viewDist(uv); float w = (sd < centerDist) ? max(cocAt(sd), 0.05) : 1.0; sum += texture2D(tColor, uv) * w; total += w; } gl_FragColor = sum / total; }`,
+            depthTest: false, depthWrite: false
+        });
+        const dofPassScene = makePostScene(dofMaterial);
+        const depthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+
+        function ensurePostTargets(needDof) {
+            const size = renderer.getDrawingBufferSize(new THREE.Vector2());
+            const w = Math.max(1, Math.floor(size.x)), h = Math.max(1, Math.floor(size.y));
+            const colorOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat };
+            const fit = (t) => { if (t.width !== w || t.height !== h) t.setSize(w, h); };
+            if (!sceneTarget) {
+                sceneTarget = (renderer.capabilities.isWebGL2 && THREE.WebGLMultisampleRenderTarget) ? new THREE.WebGLMultisampleRenderTarget(w, h, colorOpts) : new THREE.WebGLRenderTarget(w, h, colorOpts);
+            } else fit(sceneTarget);
+            if (needDof) {
+                if (!depthTarget) depthTarget = new THREE.WebGLRenderTarget(w, h, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat });
+                else fit(depthTarget);
+                if (!dofTarget) dofTarget = new THREE.WebGLRenderTarget(w, h, colorOpts);
+                else fit(dofTarget);
+            }
+            return { w: w, h: h };
+        }
+
+        function renderFrame() {
+            const speedRatio = Math.min(1.5, Math.abs(currentSpeed * physics.masterSpeed) / 7.0);
+            const blurAmount = envConfig.motionBlur ? envConfig.motionBlurStrength * 0.2 * speedRatio : 0;
+            const useBlur = blurAmount > 0.0005;
+            const useDof = envConfig.dofStrength > 0.005;
+
+            if (!useBlur && !useDof) { renderer.render(scene, camera); return; }
+            const dims = ensurePostTargets(useDof);
+            renderer.setRenderTarget(sceneTarget); renderer.render(scene, camera);
+            let src = sceneTarget.texture;
+
+            if (useDof) {
+                const prevBg = scene.background, prevFog = scene.fog, prevAuto = renderer.shadowMap.autoUpdate;
+                const prevClear = new THREE.Color(); renderer.getClearColor(prevClear); const prevAlpha = renderer.getClearAlpha();
+                scene.background = null; scene.fog = null; scene.overrideMaterial = depthMaterial;
+                renderer.shadowMap.autoUpdate = false; renderer.setClearColor(0xffffff, 1);
+                renderer.setRenderTarget(depthTarget); renderer.render(scene, camera);
+                scene.overrideMaterial = null; scene.background = prevBg; scene.fog = prevFog; renderer.shadowMap.autoUpdate = prevAuto;
+                renderer.setClearColor(prevClear, prevAlpha);
+
+                const u = dofMaterial.uniforms;
+                u.tColor.value = src; u.tDepth.value = depthTarget.texture;
+                u.cameraNear.value = camera.near; u.cameraFar.value = camera.far;
+                u.focus.value = Math.max(1.0, camera.position.distanceTo(carContainer.position));
+                u.strength.value = envConfig.dofStrength; u.aspect.value = dims.w / dims.h;
+
+                if (useBlur) { renderer.setRenderTarget(dofTarget); renderer.render(dofPassScene, postCamera); src = dofTarget.texture; }
+                else { renderer.setRenderTarget(null); renderer.render(dofPassScene, postCamera); return; }
+            }
+            renderer.setRenderTarget(null);
+            blurMaterial.uniforms.tDiffuse.value = src; blurMaterial.uniforms.strength.value = blurAmount;
+            renderer.render(blurPassScene, postCamera);
+        }
+
+        syncEnvUI(); applyEnvironment(); updateEnvJson();
+
+        const fileInput = document.getElementById('modelUpload');
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) { playerCarName = e.target.files[0].name; renderTrafficList(); }
+        });
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            const fileName = file.name.toLowerCase();
+            reader.readAsArrayBuffer(file);
+            reader.onload = function (event) {
+                const contents = event.target.result;
+                if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+                    new THREE.GLTFLoader().parse(contents, '', (g) => applyCustomCarModel(g.scene));
+                } else if (fileName.endsWith('.fbx')) {
+                    try { applyCustomCarModel(new THREE.FBXLoader().parse(contents, '')); } catch (err) { alert('Failed parsing FBX.'); }
+                }
+            };
+        });
+
+        function applyCustomCarModel(sourceScene) {
+            baseCarSourceModel = sourceScene.clone();
+            carModelGroup.clear();
+            const loadedMesh = sourceScene.clone();
+            loadedMesh.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true; child.receiveShadow = true;
+                    if (child.material) {
+                        const applyMatOpts = (m) => { m.metalness = 1.0; m.roughness = 0.0; m.envMap = cubeRenderTarget.texture; m.envMapIntensity = 3.0; m.side = THREE.FrontSide; m.needsUpdate = true; };
+                        if (Array.isArray(child.material)) child.material.forEach(applyMatOpts); else applyMatOpts(child.material);
+                    }
+                }
+            });
+            carModelGroup.add(loadedMesh); updateCarTransform(); rebuildAiCars(); applyEnvIntensity(); alert('Car model loaded!');
+        }
+
+        const trafficListEl = document.getElementById('trafficList');
+        const trafficJsonBox = document.getElementById('trafficJsonBox');
+        const trafficUploadEl = document.getElementById('trafficUpload');
+
+        function parseModelBuffer(fileName, contents, onDone) {
+            const lower = fileName.toLowerCase();
+            if (lower.endsWith('.glb') || lower.endsWith('.gltf')) {
+                new THREE.GLTFLoader().parse(contents, '', (g) => onDone(g.scene));
+            } else if (lower.endsWith('.fbx')) {
+                try { onDone(new THREE.FBXLoader().parse(contents, '')); } catch (err) { alert('Failed parsing ' + fileName); }
+            }
+        }
+
+        function updateTrafficJson() {
+            const data = {
+                trafficCars: trafficModels.map(m => ({
+                    name: m.name, rotX: m.rotX, rotY: m.rotY, rotZ: m.rotZ, scale: m.scale,
+                    hbW: m.hbW, hbH: m.hbH, hbL: m.hbL, hbX: m.hbX, hbY: m.hbY, hbZ: m.hbZ,
+                    posX: m.posX || 0, posY: m.posY || 0, posZ: m.posZ || 0, ...platePick(m)
+                }))
+            };
+            trafficJsonBox.value = JSON.stringify(data, null, 2);
+            applyPlayerCarTransform();
+        }
+
+        function renderTrafficList() {
+            trafficListEl.innerHTML = '';
+            trafficModels.forEach((m, idx) => {
+                const item = document.createElement('div'); item.className = 'traffic-item';
+                const head = document.createElement('div'); head.className = 'traffic-head';
+                const nameEl = document.createElement('div'); nameEl.className = 'traffic-name';
+                nameEl.textContent = (idx + 1) + '. ' + m.name;
+                if (playerCarName && m.name.toLowerCase() === playerCarName.toLowerCase()) {
+                    const tag = document.createElement('span'); tag.style.color = '#16a34a'; tag.textContent = '  (player car)'; nameEl.appendChild(tag);
+                }
+                if (!m.source) {
+                    const pending = document.createElement('span'); pending.className = 'traffic-pending'; pending.textContent = '  (upload file)'; nameEl.appendChild(pending);
+                }
+                head.appendChild(nameEl);
+
+                const btns = document.createElement('div'); btns.className = 'traffic-head-btns';
+                if (m.source) {
+                    const editBtn = document.createElement('button'); editBtn.className = 'traffic-edit' + (hitboxEditEntry === m ? ' active' : '');
+                    editBtn.textContent = hitboxEditEntry === m ? 'Done' : 'Edit Hitbox';
+                    editBtn.addEventListener('click', () => { hitboxEditEntry = (hitboxEditEntry === m) ? null : m; renderTrafficList(); refreshHitboxes(); });
+                    btns.appendChild(editBtn);
+                }
+                const removeBtn = document.createElement('button'); removeBtn.className = 'traffic-remove'; removeBtn.textContent = 'Remove';
+                removeBtn.addEventListener('click', () => { if (hitboxEditEntry === m) hitboxEditEntry = null; trafficModels.splice(idx, 1); renderTrafficList(); rebuildAiCars(); updateTrafficJson(); });
+                btns.appendChild(removeBtn); head.appendChild(btns); item.appendChild(head);
+
+                const makeFields = (defs, className, onInput) => {
+                    const fields = document.createElement('div'); fields.className = className;
+                    defs.forEach(([key, label, step]) => {
+                        const cell = document.createElement('div');
+                        const lab = document.createElement('span'); lab.textContent = label;
+                        const input = document.createElement('input'); input.type = 'number'; input.step = step;
+                        input.value = m[key] !== undefined ? m[key] : 0;
+                        input.addEventListener('input', () => { const v = parseFloat(input.value); if (!isNaN(v)) { m[key] = v; onInput(); updateTrafficJson(); } });
+                        cell.appendChild(lab); cell.appendChild(input); fields.appendChild(cell);
+                    });
+                    return fields;
+                };
+
+                item.appendChild(makeFields([['rotX', 'Rot X', 1], ['rotY', 'Rot Y', 1], ['rotZ', 'Rot Z', 1], ['scale', 'Size', 0.1], ['posX', 'Pos X', 0.1], ['posY', 'Pos Y', 0.1], ['posZ', 'Pos Z', 0.1]], 'traffic-fields', () => { if (m.source) rebuildAiCars(); }));
+
+                                const plTitle = document.createElement('div'); plTitle.className = 'traffic-pl-title'; plTitle.textContent = 'LICENSE PLATE (AI cars are random, the text is for your car)';
+                item.appendChild(plTitle);
+                item.appendChild(makePlateEditor(m, () => { refreshPlates(); updateTrafficJson(); }, 'Your car plate text'));
+
+                
+                if (hitboxEditEntry === m) {
+                    const title = document.createElement('div'); title.className = 'traffic-hb-title'; title.textContent = 'HITBOX STUDIO (Traffic paused)';
+                    item.appendChild(title);
+                    item.appendChild(makeFields([['hbW', 'Width', 0.1], ['hbH', 'Height', 0.1], ['hbL', 'Length', 0.1], ['hbX', 'Offset X', 0.1], ['hbY', 'Offset Y', 0.1], ['hbZ', 'Offset Z', 0.1]], 'traffic-fields hb', () => { refreshHitboxes(); }));
+                }
+                trafficListEl.appendChild(item);
+            }); renderPlayerPlateUI();
+        }
+
+        function addTrafficModel(name, sceneObj) {
+            sceneObj.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true; child.receiveShadow = true;
+                    const fix = (mat) => { mat.side = THREE.FrontSide; mat.needsUpdate = true; };
+                    if (Array.isArray(child.material)) child.material.forEach(fix); else if (child.material) fix(child.material);
+                }
+            });
+            const pending = trafficModels.find(m => !m.source && m.name === name);
+            if (pending) pending.source = sceneObj;
+            else trafficModels.push(Object.assign({ name: name, source: sceneObj, rotX: 0, rotY: 0, rotZ: 0, scale: 1, posX: 0, posY: 0, posZ: 0 }, DEFAULT_HITBOX, DEFAULT_PLATE));
+            renderTrafficList(); applyTrafficReflections(); rebuildAiCars(); applyEnvIntensity(); updateTrafficJson();
+        }
+
+        trafficUploadEl.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => parseModelBuffer(file.name, ev.target.result, (s) => addTrafficModel(file.name, s));
+                reader.readAsArrayBuffer(file);
+            });
+            e.target.value = '';
+        });
+
+        document.getElementById('copyTrafficJson').addEventListener('click', () => {
+            trafficJsonBox.select(); navigator.clipboard.writeText(trafficJsonBox.value); alert('Traffic JSON copied!');
+        });
+        document.getElementById('loadTrafficJson').addEventListener('click', () => {
+            try {
+                const parsed = JSON.parse(trafficJsonBox.value);
+                const list = Array.isArray(parsed) ? parsed : parsed.trafficCars;
+                if (!Array.isArray(list)) throw new Error();
+                const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
+                const available = trafficModels.filter(m => m.source);
+                hitboxEditEntry = null;
+                trafficModels = list.map(item => {
+                    const name = String(item.name || 'car');
+                    const found = available.findIndex(m => m.name === name);
+                    const source = found >= 0 ? available.splice(found, 1)[0].source : null;
+                    return {
+                        name: name, source: source,
+                        rotX: num(item.rotX, 0), rotY: num(item.rotY, 0), rotZ: num(item.rotZ, 0), scale: num(item.scale, 1),
+                        posX: num(item.posX, 0), posY: num(item.posY, 0), posZ: num(item.posZ, 0),
+                        hbW: num(item.hbW, DEFAULT_HITBOX.hbW), hbH: num(item.hbH, DEFAULT_HITBOX.hbH), hbL: num(item.hbL, DEFAULT_HITBOX.hbL),
+                        hbX: num(item.hbX, DEFAULT_HITBOX.hbX), hbY: num(item.hbY, DEFAULT_HITBOX.hbY), hbZ: num(item.hbZ, DEFAULT_HITBOX.hbZ), ...plateFromItem(item)
+                    };
+                });
+                renderTrafficList(); applyTrafficReflections(); rebuildAiCars(); applyEnvIntensity(); updateTrafficJson();
+                alert('Traffic JSON loaded!');
+            } catch (err) { alert('Invalid Traffic JSON.'); }
+        });
+
+        document.getElementById('showHitboxes').addEventListener('change', (e) => {
+            showAllHitboxes = e.target.value === '1'; refreshHitboxes();
+        });
+
+        renderTrafficList(); updateTrafficJson();
+
+        function getPlayerTrafficMatch() {
+            if (!playerCarName) return null;
+            const n = playerCarName.toLowerCase();
+            return trafficModels.find(m => m.name.toLowerCase() === n) || null;
+        }
+
+        function applyPlayerCarTransform() {
+            playerPlateGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
+            const match = getPlayerTrafficMatch();
+            if (match) {
+                carModelGroup.rotation.x = THREE.MathUtils.degToRad(match.rotX);
+                carModelGroup.rotation.y = THREE.MathUtils.degToRad(match.rotY);
+                carModelGroup.rotation.z = THREE.MathUtils.degToRad(match.rotZ);
+                const sc = physics.carScale * match.scale;
+                carModelGroup.scale.set(sc, sc, sc);
+            } else {
+                carModelGroup.rotation.x = THREE.MathUtils.degToRad(physics.rotX);
+                carModelGroup.rotation.y = THREE.MathUtils.degToRad(physics.rotY);
+                carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
+                carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
+            }
+        }
+
+        function updateCarTransform() { applyPlayerCarTransform(); rebuildAiCars(); }
+        function updateCarMaterials() {
+            const r = Math.max(0.0, 1.0 - (physics.shininess / Math.max(1, physics.shininess)));
+            mirrorMaterial.roughness = r; roofMirrorMaterial.roughness = r;
+        }
+
+        const keys = { w: false, s: false, a: false, d: false, q: false, e: false, shift: false };
+        let isMouseDown = false, mousePrevX = 0, mousePrevY = 0;
+        const freeCamPos = new THREE.Vector3(0, 10, 20);
+        const freeCamRot = { x: 0, y: 0 };
+
+        window.addEventListener('keydown', (e) => {
+            if (['w','W'].includes(e.key)) keys.w = true;
+            if (['s','S'].includes(e.key)) keys.s = true;
+            if (['a','A'].includes(e.key)) keys.a = true;
+            if (['d','D'].includes(e.key)) keys.d = true;
+            if (['q','Q'].includes(e.key)) keys.q = true;
+            if (['e','E'].includes(e.key)) keys.e = true;
+            if (e.key === 'Shift') keys.shift = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (['w','W'].includes(e.key)) keys.w = false;
+            if (['s','S'].includes(e.key)) keys.s = false;
+            if (['a','A'].includes(e.key)) keys.a = false;
+            if (['d','D'].includes(e.key)) keys.d = false;
+            if (['q','Q'].includes(e.key)) keys.q = false;
+            if (['e','E'].includes(e.key)) keys.e = false;
+            if (e.key === 'Shift') keys.shift = false;
+        });
+
+        window.addEventListener('mousedown', (e) => { if (e.button === 0 && cameraMode === 'free') { isMouseDown = true; mousePrevX = e.clientX; mousePrevY = e.clientY; } });
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+        window.addEventListener('mousemove', (e) => {
+            if (isMouseDown && cameraMode === 'free') {
+                const dx = e.clientX - mousePrevX, dy = e.clientY - mousePrevY;
+                mousePrevX = e.clientX; mousePrevY = e.clientY;
+                freeCamRot.y -= dx * 0.003; freeCamRot.x -= dy * 0.003;
+                freeCamRot.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, freeCamRot.x));
+            }
+        });
+
+        let currentSpeed = 0, carAngle = 0, currentSteerAngle = 0;
+        const gearThresholdsKph = [110, 165, 200, 225, 245, 249, 250];
+
+        function triggerCrashReset() {
+            carsPassedCount = 0; currentSpeed = 0;
+            carContainer.position.set(0, physics.carY, 0);
+            carAngle = 0; rebuildAiCars();
+        }
+
+        const hudScoreEl = document.getElementById('hud-score');
+        const hudSpeedEl = document.getElementById('hud-speed');
+        // top-centre counter: white under 40, yellow 40+, red 70+, purple 120+; pops on every multiple of 10
+        const carHudEl = document.getElementById('carHud'), carHudNum = document.getElementById('carHudNum');
+        let carHudLast = -1;
+        function updateCarHud(n) {
+            if (gamePaused || n === carHudLast) return;
+            const prev = carHudLast; carHudLast = n;
+            carHudNum.textContent = String(n);
+            carHudEl.className = n >= 120 ? 'c-purple' : n >= 70 ? 'c-red' : n >= 40 ? 'c-yellow' : '';
+            if (n > 0 && n % 10 === 0 && n > prev) { carHudNum.classList.remove('pop'); void carHudNum.offsetWidth; carHudNum.classList.add('pop'); }
+        }
+
+        function animateBody() {
+
+            const effectiveAccel = physics.accel * (1000 / physics.weight);
+            const effectiveBrake = physics.brake * (1000 / physics.weight);
+
+            if (keys.w && cameraMode === 'car') currentSpeed = Math.min(currentSpeed + effectiveAccel, physics.topSpeed);
+            else if (keys.s && cameraMode === 'car') currentSpeed = Math.max(currentSpeed - effectiveBrake, -physics.topSpeed / 2);
+            else if (cameraMode === 'car') {
+                if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - effectiveBrake);
+                if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + effectiveBrake);
+            }
+
+            const calculatedKph = Math.round(Math.abs(currentSpeed) * (280 / 7.0));
+            let currentGear = 1;
+            for (let i = 0; i < gearThresholdsKph.length; i++) {
+                if (calculatedKph >= gearThresholdsKph[i]) currentGear = i + 2;
+            }
+            currentGear = Math.min(7, currentGear);
+            const lowerBound = currentGear === 1 ? 0 : gearThresholdsKph[currentGear - 2];
+            const upperBound = gearThresholdsKph[currentGear - 1] || 250;
+            const gearSpanKph = Math.max(1, upperBound - lowerBound);
+            const gearProgress = Math.min(1.0, Math.max(0, calculatedKph - lowerBound) / gearSpanKph);
+
+            if (audioCtx && engineOsc && engineGain) {
+                const targetPitch = physics.soundPitch + (currentGear * 15) + (gearProgress * physics.soundLength);
+                engineOsc.frequency.setTargetAtTime(targetPitch, audioCtx.currentTime, 0.05);
+                engineGain.gain.setTargetAtTime(physics.soundVolume * (0.4 + (gearProgress * 0.6)), audioCtx.currentTime, 0.05);
+            }
+
+            let targetSteerInput = 0;
+            if (keys.a && cameraMode === 'car') targetSteerInput = 1;
+            if (keys.d && cameraMode === 'car') targetSteerInput = -1;
+            currentSteerAngle += (targetSteerInput - currentSteerAngle) * physics.steerSmoothing;
+
+            if (Math.abs(currentSpeed) > 0.001 && Math.abs(currentSteerAngle) > 0.01 && cameraMode === 'car') {
+                let dynamicTurnRate = Math.min(Math.abs(currentSpeed) * physics.turnSpeedFactor, physics.turnSpeedLimit);
+                carAngle += currentSteerAngle * dynamicTurnRate * (currentSpeed > 0 ? 1 : -1);
+            }
+
+            carContainer.rotation.y = carAngle;
+            carContainer.position.x += Math.sin(carAngle) * currentSpeed * physics.masterSpeed;
+            carContainer.position.z += Math.cos(carAngle) * currentSpeed * physics.masterSpeed;
+            carContainer.position.y = physics.carY;
+
+            updateLightPositions();
+
+            if (baseHighwaySource && highwayPropGroup.children.length > 0) {
+                const segmentLen = parseFloat(propConfig.highwaySegmentLength) || 50;
+                const totalLength = segmentLen * highwayPropGroup.children.length;
+                for (let i = 0; i < highwayPropGroup.children.length; i++) {
+                    const child = highwayPropGroup.children[i];
+                    if (child.position.z < carContainer.position.z - (segmentLen * 1.5)) child.position.z += totalLength;
+                    else if (child.position.z > carContainer.position.z + (segmentLen * (highwayPropGroup.children.length - 1.5))) child.position.z -= totalLength;
+                }
+            }
+
+            if (buildingGroup.children.length > 0) {
+                const bSeg = bldSegLen, bN = buildingGroup.children.length, bTotal = bSeg * bN;
+                const bz = carContainer.position.z;
+                for (let i = 0; i < bN; i++) {
+                    const ch = buildingGroup.children[i];
+                    let guard = 0;
+                    while (ch.position.z < bz - bSeg * 1.5 && guard++ < 50) ch.position.z += bTotal;
+                    while (ch.position.z > bz + bSeg * (bN - 1.5) && guard++ < 100) ch.position.z -= bTotal;
+                }
+                buildingGroup.position.y = physics.carY + (parseFloat(buildingConfig.buildingYOffset) || 0);
+            }
+
+            if (aiGroup.children.length > 0) {
+                const aiSpeed = parseFloat(propConfig.aiSpeed) || 5.0;
+                const oppSpeed = parseFloat(propConfig.oppSpeed) || 0;
+                const sameSpan = 8 * propConfig.aiSpacingZ;
+                const oppSpan = 8 * propConfig.oppSpacingZ;
+                const trafficPaused = !!hitboxEditEntry;
+                const px = carContainer.position.x, pz = carContainer.position.z;
+
+                for (let i = 0; i < aiGroup.children.length; i++) {
+                    const aiCar = aiGroup.children[i];
+                    const isOpp = aiCar.userData.side === 'opp';
+                    if (!trafficPaused) aiCar.position.z -= (isOpp ? oppSpeed : aiSpeed) * physics.masterSpeed;
+                    aiCar.position.y = physics.carY + (isOpp ? propConfig.oppOffsetY : propConfig.aiOffsetY);
+                    aiCar.rotation.y = THREE.MathUtils.degToRad(isOpp ? propConfig.oppRotY : propConfig.aiRotY);
+
+                    if (isOpp) {
+                        if (!aiCar.userData.passed && aiCar.position.z < pz - 5) { aiCar.userData.passed = true; }
+                        if (aiCar.position.z < pz - 120) { aiCar.position.z += oppSpan; aiCar.userData.passed = false; renewPlate(aiCar); }
+                    } else {
+                        if (!aiCar.userData.passed && aiCar.position.z > pz + 5) { aiCar.userData.passed = true; carsPassedCount++; }
+                        if (aiCar.position.z < pz - 120) { aiCar.position.z += sameSpan; aiCar.userData.passed = false; renewPlate(aiCar); }
+                    }
+
+                    aiCar.updateMatrixWorld(true);
+                    tmpHitBox.setFromObject(aiCar.userData.hitGroup);
+                    if (tmpHitBox.max.x > px - PLAYER_HALF_X && tmpHitBox.min.x < px + PLAYER_HALF_X &&
+                        tmpHitBox.max.z > pz - PLAYER_HALF_Z && tmpHitBox.min.z < pz + PLAYER_HALF_Z) {
+                        carsPassedCount = 0; aiCar.userData.passed = true;
+                    }
+                }
+            }
+
+            if (cameraMode === 'car') {
+                const currentZoomDistance = physics.zoom + (Math.abs(currentSpeed) * physics.speedZoomFactor);
+                const camOffWorldX = -Math.cos(carAngle) * physics.camOffsetX + Math.sin(carAngle) * physics.camOffsetZ;
+                const camOffWorldZ = Math.sin(carAngle) * physics.camOffsetX + Math.cos(carAngle) * physics.camOffsetZ;
+                const targetCamX = carContainer.position.x - Math.sin(carAngle) * currentZoomDistance + camOffWorldX;
+                const targetCamY = carContainer.position.y + (currentZoomDistance * 0.38) + physics.camOffsetY;
+                const targetCamZ = carContainer.position.z - Math.cos(carAngle) * currentZoomDistance + camOffWorldZ;
+
+                if (physics.smoothing >= 1.0) {
+                    camera.position.set(targetCamX, targetCamY, targetCamZ);
+                } else {
+                    camera.position.x += (targetCamX - camera.position.x) * physics.smoothing;
+                    camera.position.y += (targetCamY - camera.position.y) * physics.smoothing;
+                    camera.position.z += (targetCamZ - camera.position.z) * physics.smoothing;
+                }
+                camera.lookAt(carContainer.position.x, carContainer.position.y + 1, carContainer.position.z);
+                camera.rotateY(THREE.MathUtils.degToRad(physics.camRotY));
+                camera.rotateX(THREE.MathUtils.degToRad(physics.camRotX));
+                camera.rotateZ(THREE.MathUtils.degToRad(physics.camRotZ));
+            } else {
+                const moveSpeed = keys.shift ? 1.5 : 0.5;
+                const forward = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), freeCamRot.y);
+                const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), freeCamRot.y);
+                if (keys.w) freeCamPos.addScaledVector(forward, moveSpeed);
+                if (keys.s) freeCamPos.addScaledVector(forward, -moveSpeed);
+                if (keys.d) freeCamPos.addScaledVector(right, moveSpeed);
+                if (keys.a) freeCamPos.addScaledVector(right, -moveSpeed);
+                if (keys.e) freeCamPos.y += moveSpeed;
+                if (keys.q) freeCamPos.y -= moveSpeed;
+                camera.position.copy(freeCamPos);
+                camera.lookAt(new THREE.Vector3(
+                    freeCamPos.x + Math.sin(freeCamRot.y) * Math.cos(freeCamRot.x),
+                    freeCamPos.y + Math.sin(freeCamRot.x),
+                    freeCamPos.z + Math.cos(freeCamRot.y) * Math.cos(freeCamRot.x)
+                ));
+            }
+
+            carModelGroup.visible = false; aiGroup.visible = false;
+            cubeCamera.position.copy(carContainer.position); cubeCamera.update(renderer, scene);
+            carModelGroup.visible = true; aiGroup.visible = true;
+
+            hudScoreEl.textContent = `CARS PASSED: ${carsPassedCount}`; updateCarHud(carsPassedCount); drawSpeedo(calculatedKph, currentGear);
+            hudSpeedEl.textContent = `SPEED: ${calculatedKph} KPH | GEAR: ${currentGear}${currentGear === 7 ? ' (OD)' : ''}`;
+            renderFrame();
+        }
+
+                // ===== MENU / FOLDER LOADER / PAUSE =====
+        const $m = id => document.getElementById(id);
+        const lib = { cars: [], skies: [], maps: [], carCfgFile: null, trafficCfgFile: null, buildingCfgFile: null };
+        let carCfg = null, trafficCfg = null, buildingCfg = null, libSource = '', selCar = null, selSky = null, selMap = null;
+        let gameStarted = false, gamePaused = false;
+        const modelCache = new Map(), thumbCache = new Map(), thumbQ = [];
+        let thumbBusy = false, prevR = null, menuPicUrl = null;
+
+        // the player's car is never used as AI traffic
+        function isPlayerCarEntry(m) { return !!playerCarName && m.name.toLowerCase() === playerCarName.toLowerCase(); }
+        function showScreen(id) { ['screenBoot', 'screenMain', 'screenSelect', 'screenLoading'].forEach(n => $m(n).classList.toggle('hidden', n !== id)); }
+
+        function getModel(file) {
+            if (!modelCache.has(file.name)) {
+                modelCache.set(file.name, file.arrayBuffer().then(buf => new Promise((res, rej) => {
+                    try {
+                        if (/\.fbx$/i.test(file.name)) res(new THREE.FBXLoader().parse(buf, ''));
+                        else new THREE.GLTFLoader().parse(buf, '', g => res(g.scene), rej);
+                    } catch (err) { rej(err); }
+                })).catch(err => { modelCache.delete(file.name); throw err; }));
+            }
+            return modelCache.get(file.name);
+        }
+        function loadSkyTexture(file) {
+            return new Promise((res, rej) => {
+                const url = file.siteUrl || URL.createObjectURL(file);
+                const L = /\.exr$/i.test(file.name) ? new THREE.EXRLoader() : new THREE.RGBELoader();
+                L.load(url, t => { URL.revokeObjectURL(url); res(t); }, undefined, err => { URL.revokeObjectURL(url); rej(err); });
+            });
+        }
+        async function readJson(f, label, notes) {
+            if (!f) return null;
+            try { return JSON.parse(await f.text()); } catch (err) { notes.push(label + ' is not valid JSON'); return null; }
+        }
+        function entryFromItem(item) {
+            const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
+            return Object.assign({
+                name: String(item.name || 'car'), source: null,
+                rotX: num(item.rotX, 0), rotY: num(item.rotY, 0), rotZ: num(item.rotZ, 0), scale: num(item.scale, 1),
+                posX: num(item.posX, 0), posY: num(item.posY, 0), posZ: num(item.posZ, 0),
+                hbW: num(item.hbW, DEFAULT_HITBOX.hbW), hbH: num(item.hbH, DEFAULT_HITBOX.hbH), hbL: num(item.hbL, DEFAULT_HITBOX.hbL),
+                hbX: num(item.hbX, DEFAULT_HITBOX.hbX), hbY: num(item.hbY, DEFAULT_HITBOX.hbY), hbZ: num(item.hbZ, DEFAULT_HITBOX.hbZ)
+            }, plateFromItem(item));
+        }
+
+        // ---- game files: auto-load from this site (GitHub / Cloudflare), else pick a folder by hand ----
+        const MAP_RE = /^(.*?highway)\s*(\d+)(?:[._\-\s]+(\d+))?\.(glb|gltf)$/i;
+        // HIGHWAY1.1 + HIGHWAY1.2 + HIGHWAY1.3 = one map "HIGHWAY1"
+        function groupMapFiles(files) {
+            const groups = new Map();
+            files.forEach(f => {
+                const m = f.name.match(MAP_RE);
+                const base = m ? m[1] + m[2] : f.name;
+                const key = base.toLowerCase();
+                if (!groups.has(key)) groups.set(key, { key: key, base: base, parts: [] });
+                groups.get(key).parts.push({ f: f, minor: (m && m[3] !== undefined) ? parseInt(m[3], 10) : 0 });
+            });
+            return Array.from(groups.values()).map(g => {
+                g.parts.sort((a, b) => a.minor - b.minor || a.f.name.localeCompare(b.f.name));
+                const parts = g.parts.map(p => p.f);
+                return { key: g.key, name: g.base + (parts.length > 1 ? ' (' + parts.length + ' parts)' : ''), parts: parts };
+            }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+        }
+        function classifyFiles(files) {
+            const out = { cars: [], skies: [], hw: [], carCfgFile: null, trafficCfgFile: null, buildingCfgFile: null, pic: null };
+            files.forEach(f => {
+                const n = f.name.toLowerCase();
+                if (/^menupic\.(jpe?g|png|webp)$/.test(n)) out.pic = f;
+                else if (n === 'car_config.txt' || n === 'car_config') out.carCfgFile = f;
+                else if (n === 'traffic_config.txt' || n === 'traffic_config') out.trafficCfgFile = f;
+                else if (/^buildings?_config(\.txt)?$/.test(n)) out.buildingCfgFile = f;
+                else if (/\.(hdr|exr)$/.test(n)) out.skies.push(f);
+                else if (/\.(glb|gltf|fbx)$/.test(n)) (n.includes('highway') ? out.hw : out.cars).push(f);
+            });
+            return out;
+        }
+        async function applyLibrary(files, source) {
+            const c = classifyFiles(files);
+            lib.cars = c.cars; lib.skies = c.skies; lib.maps = groupMapFiles(c.hw); lib.pic = c.pic;
+            lib.carCfgFile = c.carCfgFile; lib.trafficCfgFile = c.trafficCfgFile; lib.buildingCfgFile = c.buildingCfgFile;
+            libSource = source;
+            modelCache.clear(); thumbCache.clear(); selCar = selSky = selMap = null;
+            const byName = (a, b) => a.name.localeCompare(b.name);
+            lib.cars.sort(byName); lib.skies.sort(byName);
+            lib.manifestNames = Array.from(new Set([].concat(lib.cars, lib.skies, c.hw, [lib.carCfgFile, lib.trafficCfgFile, lib.buildingCfgFile, lib.pic]).filter(Boolean).map(f => f.name)));
+            const notes = [];
+            carCfg = await readJson(lib.carCfgFile, 'car_config.txt', notes);
+            trafficCfg = await readJson(lib.trafficCfgFile, 'traffic_config.txt', notes);
+            buildingCfg = await readJson(lib.buildingCfgFile, 'building_config.txt', notes);
+            $m('scanSummary').textContent =
+                (source === 'site' ? 'Loaded automatically from this site\n' : '') +
+                'Cars: ' + lib.cars.length + '   |   Skies: ' + lib.skies.length + '   |   Highways: ' + lib.maps.length + '\n' +
+                'car_config.txt: ' + (carCfg ? 'found' : 'not found') + '   |   traffic_config.txt: ' + (trafficCfg ? 'found' : 'not found') + '\n' +
+                'building_config.txt: ' + (buildingCfg ? 'found' : 'not found') + '   |   menupic: ' + (lib.pic ? 'found' : 'not found') +
+                (notes.length ? '\n' + notes.join('\n') : '');
+            if (menuPicUrl) URL.revokeObjectURL(menuPicUrl);
+            menuPicUrl = lib.pic ? (lib.pic.siteUrl || URL.createObjectURL(lib.pic)) : null;
+            $m('menuRoot').style.background = menuPicUrl ? 'linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.38)), center / cover no-repeat url("' + menuPicUrl + '")' : '';
+            // folder buttons only exist for a manual load
+            $m('changeFolderBtn').style.display = source === 'folder' ? '' : 'none';
+            showScreen('screenMain');
+        }
+        $m('folderInput').addEventListener('change', async e => {
+            const files = Array.from(e.target.files || []);
+            e.target.value = '';
+            if (!files.length) return;
+            await applyLibrary(files, 'folder');
+        });
+        // ---- finding the files that sit next to index.html ----
+        function siteFileObj(name) {
+            const url = encodeURI(name);
+            const get = async () => {
+                const r = await fetch(url);
+                if (!r.ok) throw new Error(name + ': HTTP ' + r.status);
+                if ((r.headers.get('content-type') || '').toLowerCase().includes('text/html')) throw new Error(name + ' came back as a web page');
+                return r;
+            };
+            return {
+                name: name, siteUrl: url,
+                text: async () => (await get()).text(),
+                arrayBuffer: async () => {
+                    const buf = await (await get()).arrayBuffer();
+                    if (/\.glb$/i.test(name) && new TextDecoder().decode(new Uint8Array(buf, 0, 4)) !== 'glTF') throw new Error(name + ' is not a real .glb');
+                    return buf;
+                }
+            };
+        }
+        async function siteHas(name) {
+            try {
+                const ctl = new AbortController();
+                const r = await fetch(encodeURI(name), { signal: ctl.signal, cache: 'no-cache' });
+                const ct = (r.headers.get('content-type') || '').toLowerCase();
+                ctl.abort(); // only the headers are needed
+                return r.ok && !ct.includes('text/html'); // hosts that answer every missing file with index.html don't count
+            } catch (err) { return false; }
+        }
+        async function discoverSiteNames() {
+            if (location.protocol === 'file:') return [];
+            // 1) game_files.json or maps.json: a plain list of file names
+            for (const mf of ['game_files.json', 'maps.json']) {
+                try {
+                    const r = await fetch(mf, { cache: 'no-cache' });
+                    if (!r.ok) continue;
+                    let j = await r.json();
+                    if (j && !Array.isArray(j) && Array.isArray(j.files)) j = j.files;
+                    if (Array.isArray(j) && j.length) return j.map(String);
+                } catch (err) {}
+            }
+            // 2) GitHub Pages: ask GitHub which files are in the repo
+            if (/\.github\.io$/i.test(location.hostname)) {
+                try {
+                    const owner = location.hostname.split('.')[0];
+                    const seg = location.pathname.split('/').filter(Boolean)[0];
+                    const repo = (seg && !seg.includes('.')) ? seg : owner + '.github.io';
+                    const r = await fetch('https://api.github.com/repos/' + owner + '/' + repo + '/contents/');
+                    if (r.ok) {
+                        const j = await r.json();
+                        const n = Array.isArray(j) ? j.filter(x => x.type === 'file').map(x => x.name) : [];
+                        if (n.length) return n;
+                    }
+                } catch (err) {}
+            }
+            // 3) last resort: probe the names the game knows (configs, menupic, HIGHWAY<n>.<m>.glb). Cars and skies need game_files.json.
+            const names = [];
+            const fixed = ['car_config.txt', 'traffic_config.txt', 'building_config.txt', 'buildings_config.txt', 'menupic.jpg', 'menupic.jpeg', 'menupic.png', 'menupic.webp'];
+            const fx = await Promise.all(fixed.map(siteHas));
+            fixed.forEach((n, i) => { if (fx[i]) names.push(n); });
+            let misses = 0;
+            for (let major = 1; major <= 40 && misses < 3; major++) {
+                const found = [];
+                const [a, b] = await Promise.all([siteHas('HIGHWAY' + major + '.1.glb'), siteHas('HIGHWAY' + major + '.glb')]);
+                if (a) found.push('HIGHWAY' + major + '.1.glb');
+                if (b) found.push('HIGHWAY' + major + '.glb');
+                if (a) {
+                    const ms = []; for (let k = 2; k <= 16; k++) ms.push(k);
+                    const res = await Promise.all(ms.map(k => siteHas('HIGHWAY' + major + '.' + k + '.glb')));
+                    ms.forEach((k, i) => { if (res[i]) found.push('HIGHWAY' + major + '.' + k + '.glb'); });
+                }
+                if (found.length) { names.push(...found); misses = 0; } else misses++;
+            }
+            return names;
+        }
+        function showManualPicker() {
+            if (libSource) return;
+            $m('bootMsg').style.display = 'none';
+            $m('bootManual').style.display = '';
+            $m('folderLabel').style.display = '';
+        }
+        async function autoLoadSite() {
+            const timer = setTimeout(showManualPicker, 10000); // slow or blocked? let the person pick a folder meanwhile
+            let names = [];
+            try { names = await discoverSiteNames(); } catch (err) {}
+            clearTimeout(timer);
+            if (libSource === 'folder') return;
+            const files = names.map(siteFileObj);
+            const c = classifyFiles(files);
+            if (c.cars.length || c.skies.length || c.hw.length || c.carCfgFile || c.trafficCfgFile || c.buildingCfgFile) await applyLibrary(files, 'site');
+            else showManualPicker();
+        }
+        autoLoadSite().catch(showManualPicker);
+        $m('changeFolderBtn').addEventListener('click', () => showScreen('screenBoot'));
+        $m('playBtn').addEventListener('click', () => { buildSelectScreen(); showScreen('screenSelect'); });
+        $m('backBtn').addEventListener('click', () => showScreen('screenMain'));
+        $m('driveBtn').addEventListener('click', () => startDrive());
+
+        // ---- previews (one at a time, only pictures are kept) ----
+        function getPreviewRenderer() {
+            if (!prevR) {
+                prevR = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+                prevR.setSize(320, 200); prevR.outputEncoding = THREE.sRGBEncoding;
+            }
+            return prevR;
+        }
+        async function skyThumb(file) {
+            const tex = await loadSkyTexture(file);
+            const r = getPreviewRenderer(); r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1;
+            const sc = new THREE.Scene(), cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+            const mat = new THREE.MeshBasicMaterial({ map: tex });
+            sc.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+            r.render(sc, cam);
+            const url = r.domElement.toDataURL('image/jpeg', 0.82);
+            tex.dispose(); mat.dispose();
+            return url;
+        }
+        async function carThumb(file) {
+            const model = await getModel(file);
+            const r = getPreviewRenderer(); r.toneMapping = THREE.NoToneMapping;
+            const sc = new THREE.Scene(); sc.background = new THREE.Color(0x1e293b);
+            sc.add(new THREE.AmbientLight(0xffffff, 0.9));
+            sc.add(new THREE.HemisphereLight(0xffffff, 0x334155, 0.8));
+            const dl = new THREE.DirectionalLight(0xffffff, 1.2); dl.position.set(5, 8, 6); sc.add(dl);
+            const clone = model.clone(true), temp = [];
+            clone.traverse(o => {
+                if (!o.isMesh || !o.material) return;
+                const f = m => { const c = m.clone(); c.envMap = null; if (c.metalness !== undefined) c.metalness = Math.min(c.metalness, 0.3); temp.push(c); return c; };
+                o.material = Array.isArray(o.material) ? o.material.map(f) : f(o.material);
+            });
+            const tl = trafficCfg && (Array.isArray(trafficCfg) ? trafficCfg : trafficCfg.trafficCars);
+            const ent = Array.isArray(tl) ? tl.find(i => String(i.name || '').toLowerCase() === file.name.toLowerCase()) : null;
+            const src = ent || carCfg || {};
+            const rd = (v, d) => THREE.MathUtils.degToRad(typeof v === 'number' ? v : d);
+            const wrap = new THREE.Group(); wrap.add(clone);
+            wrap.rotation.set(rd(src.rotX, 0), rd(src.rotY, ent ? 0 : 180), rd(src.rotZ, 0));
+            sc.add(wrap);
+            const box = new THREE.Box3().setFromObject(wrap);
+            const size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
+            const rad = Math.max(size.x, size.y, size.z) || 1;
+            const cam = new THREE.PerspectiveCamera(35, 320 / 200, rad * 0.05, rad * 30);
+            cam.position.set(center.x + rad * 1.1, center.y + rad * 0.55, center.z + rad * 1.4);
+            cam.lookAt(center);
+            r.render(sc, cam);
+            const url = r.domElement.toDataURL('image/jpeg', 0.85);
+            temp.forEach(m => m.dispose());
+            return url;
+        }
+        function setThumb(el, url) { el.innerHTML = ''; const i = document.createElement('img'); i.src = url; el.appendChild(i); }
+        function queueThumb(kind, file, el) {
+            const key = kind + '|' + file.name;
+            if (thumbCache.has(key)) { setThumb(el, thumbCache.get(key)); return; }
+            thumbQ.push({ kind: kind, file: file, el: el, key: key });
+            runThumbQ();
+        }
+        async function runThumbQ() {
+            if (thumbBusy) return;
+            thumbBusy = true;
+            while (thumbQ.length) {
+                const t = thumbQ.shift();
+                try {
+                    const url = t.kind === 'sky' ? await skyThumb(t.file) : await carThumb(t.file);
+                    thumbCache.set(t.key, url); setThumb(t.el, url);
+                } catch (err) { t.el.textContent = 'no preview'; }
+                await new Promise(r => setTimeout(r, 30));
+            }
+            thumbBusy = false;
+        }
+
+        // ---- select screen ----
+        function makeCard(name, selected, onPick) {
+            const el = document.createElement('div'); el.className = 'mcard' + (selected ? ' sel' : '');
+            const th = document.createElement('div'); th.className = 'thumb'; th.textContent = 'loading...';
+            const nm = document.createElement('div'); nm.className = 'cname'; nm.textContent = name; nm.title = name;
+            el.appendChild(th); el.appendChild(nm);
+            el.addEventListener('click', () => {
+                Array.from(el.parentNode.children).forEach(c => c.classList.remove('sel'));
+                el.classList.add('sel'); onPick();
+            });
+            return { el: el, th: th };
+        }
+        function buildSelectScreen() {
+            const carGrid = $m('carGrid'), skyGrid = $m('skyGrid'), mapList = $m('mapList');
+            carGrid.innerHTML = ''; skyGrid.innerHTML = ''; mapList.innerHTML = '';
+            thumbQ.length = 0;
+            if (!selCar && lib.cars.length) selCar = lib.cars[0];
+            if (!selSky && lib.skies.length) selSky = lib.skies[0];
+            if (!selMap && lib.maps.length) selMap = lib.maps[0];
+            lib.skies.forEach(f => { const c = makeCard(f.name, f === selSky, () => { selSky = f; }); skyGrid.appendChild(c.el); queueThumb('sky', f, c.th); });
+            lib.cars.forEach(f => { const c = makeCard(f.name, f === selCar, () => { selCar = f; }); carGrid.appendChild(c.el); queueThumb('car', f, c.th); });
+            lib.maps.forEach(f => { const c = makeCard(f.name, f === selMap, () => { selMap = f; }); c.th.remove(); mapList.appendChild(c.el); });
+            if (!lib.cars.length) carGrid.textContent = 'No car models found, the default box car will be used.';
+            if (!lib.skies.length) skyGrid.textContent = 'No .hdr / .exr files found, the default sky will be used.';
+            if (!lib.maps.length) mapList.textContent = 'No files with "HIGHWAY" in the name found.';
+        }
+
+        // ---- drive ----
+        function installPlayerCar(sourceScene) {
+            carModelGroup.clear();
+            const loadedMesh = sourceScene.clone();
+            loadedMesh.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true; child.receiveShadow = true;
+                    if (child.material) {
+                        const f = m => { m.metalness = 1.0; m.roughness = 0.0; m.envMap = cubeRenderTarget.texture; m.envMapIntensity = 3.0; m.side = THREE.FrontSide; m.needsUpdate = true; };
+                        if (Array.isArray(child.material)) child.material.forEach(f); else f(child.material);
+                    }
+                }
+            });
+            carModelGroup.add(loadedMesh);
+        }
+        async function startDrive() {
+            showScreen('screenLoading');
+            const log = $m('loadLog'); log.textContent = '';
+            const say = t => { log.textContent += t + '\n'; };
+            await new Promise(r => setTimeout(r, 40));
+            try {
+                playerCarName = selCar ? selCar.name : '';
+                const pn = playerCarName.toLowerCase();
+
+                if (carCfg && typeof carCfg === 'object') {
+                    Object.keys(defaultPhysics).forEach(k => { const v = carCfg[k]; if (typeof v === 'number' && isFinite(v)) physics[k] = v; });
+                    say('Loaded car_config.txt');
+                }
+                if (buildingCfg && typeof buildingCfg === 'object') {
+                    Object.assign(buildingConfig, defaultBuildingConfig);
+                    Object.keys(defaultBuildingConfig).forEach(k => { if (Object.prototype.hasOwnProperty.call(buildingCfg, k)) buildingConfig[k] = buildingCfg[k]; });
+                    syncBuildingUI(); say('Loaded building_config.txt');
+                }
+                const list = trafficCfg && (Array.isArray(trafficCfg) ? trafficCfg : trafficCfg.trafficCars);
+                if (Array.isArray(list)) { trafficModels = list.map(entryFromItem); say('Loaded traffic_config.txt'); }
+                else trafficModels = lib.cars.filter(f => f.name.toLowerCase() !== pn).map(f => entryFromItem({ name: f.name }));
+                hitboxEditEntry = null;
+                updateUIFromState(); renderTrafficList();
+
+                initAudio();
+                if (audioCtx) {
+                    if (audioCtx.state === 'suspended') audioCtx.resume();
+                    engineFilter.frequency.setValueAtTime(physics.soundBass, audioCtx.currentTime);
+                    engineFilter.Q.setValueAtTime(physics.soundBoxResonance, audioCtx.currentTime);
+                    waveShaper.curve = makeDistortionCurve(physics.soundSharpness);
+                }
+
+                if (selSky) {
+                    say('Loading sky: ' + selSky.name);
+                    try { const t = await loadSkyTexture(selSky); t.mapping = THREE.EquirectangularReflectionMapping; scene.background = t; scene.environment = t; }
+                    catch (err) { say('  sky failed to load'); }
+                }
+                if (selMap) {
+                    say('Loading map: ' + selMap.name);
+                    try {
+                        const partFiles = selMap.parts || [selMap];
+                        const models = await Promise.all(partFiles.map(pf => getModel(pf)));
+                        models.forEach((hw, i) => {
+                            say('  part ' + (i + 1) + '/' + models.length + ': ' + partFiles[i].name);
+                            hw.traverse(c => { if (c.isMesh) { c.castShadow = false; c.receiveShadow = true; if (c.material) { c.material.side = THREE.FrontSide; c.material.needsUpdate = true; } } });
+                        });
+                        baseHighwayParts = models; baseHighwaySource = models[0]; rebuildHighwayLoops();
+                    } catch (err) { say('  map failed to load: ' + (err && err.message || err)); }
+                }
+                if (selCar) {
+                    say('Loading your car: ' + selCar.name);
+                    try { installPlayerCar(await getModel(selCar)); } catch (err) { say('  car failed to load'); }
+                }
+                for (const ent of trafficModels.slice()) {
+                    if (isPlayerCarEntry(ent)) continue;
+                    const f = lib.cars.find(c => c.name.toLowerCase() === ent.name.toLowerCase());
+                    if (!f) { say('Traffic car not in folder: ' + ent.name); continue; }
+                    say('Loading traffic car: ' + ent.name);
+                    try { addTrafficModel(ent.name, await getModel(f)); } catch (err) { say('  failed: ' + ent.name); }
+                }
+            } catch (err) { say('Something went wrong: ' + err); }
+
+            carsPassedCount = 0; currentSpeed = 0; carAngle = 0;
+            carContainer.position.set(0, physics.carY, 0);
+            rebuildBuildings();
+            updateCarTransform(); applyEnvIntensity(); applyEnvironment();
+            document.body.classList.add('playing');
+            $m('menuRoot').classList.add('hidden');
+            setPauseState('none'); gameStarted = true;
+        }
+
+        // ---- pause menu (Resume / Options / Quit) + plate changer ----
+        let pauseState = 'none';
+        function setPauseState(st) {
+            pauseState = st; gamePaused = st !== 'none';
+            $m('pauseMenu').classList.toggle('open', st === 'menu');
+            $m('ui-panel').classList.toggle('open', st === 'options');
+            if (gamePaused) Object.keys(keys).forEach(k => { keys[k] = false; });
+            if (st === 'menu') syncPlateInputs();
+        }
+        function syncPlateInputs() {
+            const c = getPlayerPlateCfg();
+            $m('pmPlateText').value = c.plateText || '';
+            $m('pmPlateOn').value = c.plateOn ? '1' : '0';
+        }
+        function plateChanged() { refreshPlates(); updateTrafficJson(); updatePlayerPlateJson(); renderTrafficList(); }
+        $m('pmPlateText').addEventListener('input', e => { getPlayerPlateCfg().plateText = e.target.value; plateChanged(); });
+        $m('pmPlateOn').addEventListener('change', e => { getPlayerPlateCfg().plateOn = parseInt(e.target.value); plateChanged(); });
+        $m('pmPlateRandom').addEventListener('click', () => { const t = randomPlateText(); getPlayerPlateCfg().plateText = t; $m('pmPlateText').value = t; plateChanged(); });
+
+        function quitToMenu() {
+            setPauseState('none'); gameStarted = false;
+            document.body.classList.remove('playing');
+            currentSpeed = 0; carAngle = 0; carsPassedCount = 0;
+            Object.assign(physics, defaultPhysics);
+            scene.background = new THREE.Color(0x1e293b); scene.environment = null;
+            baseHighwaySource = null; baseHighwayParts = null; highwayPropGroup.clear(); disposeBuildings();
+            carModelGroup.clear(); carModelGroup.add(carBody); carModelGroup.add(carRoof);
+            playerCarName = '';
+            if (audioCtx && engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+            $m('menuRoot').classList.remove('hidden'); showScreen('screenMain');
+        }
+        $m('pmResume').addEventListener('click', () => setPauseState('none'));
+        // ---- DEBUG MODE (password protected, stays unlocked until the page is reloaded) ----
+        const dbgSum = s => { s = 'hs|' + s; let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0, ch; i < s.length; i++) { ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
+        const dbgKey = 3966873354684944;
+        let dbgUnlocked = false;
+        function closeDbg() { $m('dbgModal').classList.remove('open'); $m('dbgPass').value = ''; $m('dbgMsg').textContent = ''; }
+        function openDbg() {
+            if (dbgUnlocked) { setPauseState('options'); return; }
+            $m('dbgPass').value = ''; $m('dbgMsg').textContent = '';
+            $m('dbgModal').classList.add('open');
+            setTimeout(() => $m('dbgPass').focus(), 30);
+        }
+        function tryDbg() {
+            if (dbgSum($m('dbgPass').value) === dbgKey) { dbgUnlocked = true; closeDbg(); setPauseState('options'); }
+            else { $m('dbgPass').value = ''; $m('dbgMsg').textContent = 'Access denied'; }
+        }
+        $m('pmOptions').addEventListener('click', openDbg);
+        $m('dbgGo').addEventListener('click', tryDbg);
+        $m('dbgCancel').addEventListener('click', closeDbg);
+        $m('dbgPass').addEventListener('keyup', e => { if (e.key === 'Enter' && $m('dbgPass').value) tryDbg(); });
+        $m('pmReset').addEventListener('click', () => { triggerCrashReset(); setPauseState('none'); });
+        $m('pmQuit').addEventListener('click', quitToMenu);
+        $m('resumeBtn').addEventListener('click', () => setPauseState('menu'));
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                if ($m('dbgModal').classList.contains('open')) { e.preventDefault(); closeDbg(); return; }
+                if (gameStarted) { e.preventDefault(); setPauseState(pauseState === 'none' ? 'menu' : pauseState === 'menu' ? 'none' : 'menu'); }
+                return;
+            }
+            const t = e.target, typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
+            if (!gameStarted || gamePaused || typing) e.stopImmediatePropagation();
+        }, true);
+
+        // ---- main loop wrapper: frozen world while settings are open (camera + render still update) ----
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!gameStarted) return;
+            if (!gamePaused) { animateBody(); return; }
+            const snap = {
+                sp: currentSpeed, ang: carAngle, st: currentSteerAngle, cp: carsPassedCount,
+                px: carContainer.position.x, pz: carContainer.position.z,
+                ai: aiGroup.children.map(c => [c, c.position.z, c.userData.passed]),
+                hw: highwayPropGroup.children.map(c => [c, c.position.z]),
+                bd: buildingGroup.children.map(c => [c, c.position.z])
+            };
+            animateBody();
+            currentSpeed = snap.sp; carAngle = snap.ang; currentSteerAngle = snap.st; carsPassedCount = snap.cp;
+            carContainer.position.x = snap.px; carContainer.position.z = snap.pz;
+            snap.ai.forEach(a => { a[0].position.z = a[1]; a[0].userData.passed = a[2]; });
+            snap.hw.forEach(a => { a[0].position.z = a[1]; });
+            snap.bd.forEach(a => { a[0].position.z = a[1]; });
+            if (audioCtx && engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+        }
+
+        
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
