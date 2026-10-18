@@ -2008,6 +2008,7 @@ body.playing #mpHud.on { display: block; }
             { "name": "FINAL_MODEL_GTS.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 1, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 }
         ];
         let playerCarName = '';
+        const LANCER_Y = -0.2; // the Lancer sits 0.2 lower than its traffic_config says
         let mpRole = null, mpHostCar = '', mpSlot = 0; // multiplayer: 'host' / 'guest' / null
 
         const DEFAULT_HITBOX = { hbW: 2, hbH: 1.5, hbL: 3.5, hbX: 0, hbY: 0.75, hbZ: 0 };
@@ -2259,6 +2260,7 @@ body.playing #mpHud.on { display: block; }
                 wrapper.add(modelClone);
                 wrapper.rotation.set(THREE.MathUtils.degToRad(entry.rotX), THREE.MathUtils.degToRad(entry.rotY), THREE.MathUtils.degToRad(entry.rotZ));
                 wrapper.scale.set(entry.scale, entry.scale, entry.scale);
+                if (/lancer/i.test(entry.name)) wrapper.position.y = LANCER_Y;
             } else if (baseCarSourceModel) {
                 wrapper.add(baseCarSourceModel.clone(true));
             } else {
@@ -3669,7 +3671,7 @@ body.playing #mpHud.on { display: block; }
 const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 behind, up to 420 ahead
         const MP_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let mpPending = null; // 'host' or 'guest' while picking a car, before the drive starts
-        const mp = { peer: null, conn: null, players: new Map(), remotes: new Map(), code: '', pub: true, id: 0, nextId: 1, timers: [], rtt: 0, gen: 0, hudT: 0, joinTimer: 0, dropped: false, listTimer: 0, trafficOn: false, t0: 0, sOff: 0, synced: false, metaDue: true, snapN: 0, stN: 0, listSig: '', lastMeta: '' };
+        const mp = { peer: null, conn: null, players: new Map(), remotes: new Map(), code: '', pub: true, id: 0, nextId: 1, timers: [], rtt: 0, gen: 0, hudT: 0, joinTimer: 0, dropped: false, listTimer: 0, trafficOn: false, S: 0, sAnchor: 0, tAnchor: 0, rate: 0.06, refS: null, refT: 0, synced: false, metaDue: true, snapN: 0, stN: 0, listSig: '', lastMeta: '' };
         const remoteGroup = new THREE.Group(); scene.add(remoteGroup);
         const mpNum = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
         const mpStr = v => String(v == null ? '' : v).slice(0, 16);
@@ -3717,9 +3719,10 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
         }
 
         // ---- shared traffic: every car sits at a fixed spot in a list, and the HOST's scroll value S moves them all ----
-        // S counts in 60fps frames and is host time. Each car repeats every "span" along the road, and a client only shows
+        // S counts the HOST's own game frames (same feel as single-player, whatever the frame rate); guests follow it at the rate they measure. Each car repeats every "span" along the road, and a client only shows
         // the copy that falls inside its own window (MP_BEHIND behind to MP_AHEAD ahead), so everyone sees what the host would see there.
-        function mpTrafficS() { const now = performance.now(); return mpRole === 'host' ? (now - mp.t0) * 0.06 : now * 0.06 + mp.sOff; }
+        function mpTrafficS() { return mpRole === 'host' ? mp.S : mp.sAnchor + mp.rate * (performance.now() - mp.tAnchor); }
+
         function mpPlaceTraffic(car, isOpp, S, pz) {
             const speed = isOpp ? (parseFloat(propConfig.oppSpeed) || 0) : (parseFloat(propConfig.aiSpeed) || 5.0);
             const span = 8 * (isOpp ? propConfig.oppSpacingZ : propConfig.aiSpacingZ);
@@ -3732,7 +3735,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (km === undefined) car.userData.kMax = k;
             else if (k > km) { car.userData.kMax = k; if (!isOpp) carsPassedCount++; renewPlate(car); }
         }
-        function mpHostResetTraffic() { mp.t0 = performance.now(); mp.metaDue = true; }
+        function mpHostResetTraffic() { mp.S = 0; mp.metaDue = true; }
 
         // ---- teleport + player list (pause menu) ----
         function mpTeleportTo(id) {
@@ -3764,6 +3767,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (match) { r.mg.rotation.set(d(match.rotX), d(match.rotY), d(match.rotZ)); const s = physics.carScale * match.scale; r.mg.scale.set(s, s, s); }
             else { r.mg.rotation.set(d(physics.rotX), d(physics.rotY), d(physics.rotZ)); r.mg.scale.set(physics.carScale, physics.carScale, physics.carScale); }
             r.pg.scale.set(physics.carScale, physics.carScale, physics.carScale);
+            r.mg.position.set(0, /lancer/i.test(String(r.car)) ? LANCER_Y * physics.carScale : 0, 0);
             r.cfg = match || playerPlate;
             mpRefreshRemotePlate(r);
         }
@@ -3793,7 +3797,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
         function mpUpsertRemote(id, info) {
             let r = mp.remotes.get(id), plateChanged = false;
             if (!r) {
-                r = { id: id, car: null, pt: '', po: 1, cfg: null, root: new THREE.Group(), mg: new THREE.Group(), pg: new THREE.Group(), plate: makePlateMesh(), tx: 0, tz: 0, ta: 0, tv: 0, tRecv: performance.now(), cp: 0, init: false };
+                r = { id: id, car: null, pt: '', po: 1, cfg: null, root: new THREE.Group(), mg: new THREE.Group(), pg: new THREE.Group(), plate: makePlateMesh(), tx: 0, tz: 0, ta: 0, tv: 0, vx: 0, vz: 0, tRecv: performance.now(), cp: 0, init: false };
                 r.root.add(r.mg); r.root.add(r.pg); r.pg.add(r.plate); r.root.visible = false;
                 remoteGroup.add(r.root); mp.remotes.set(id, r); plateChanged = true;
             }
@@ -3810,19 +3814,25 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             mp.remotes.delete(id);
         }
         function mpSetRemoteState(r, p, tRecv) {
-            r.tx = mpNum(p.x); r.tz = mpNum(p.z); r.ta = mpNum(p.a); r.tv = mpNum(p.v); r.cp = mpNum(p.cp) | 0; r.tRecv = tRecv;
+            const nx = mpNum(p.x), nz = mpNum(p.z);
+            if (r.init && tRecv > r.tRecv) { // speed in units per ms, measured from real movement (independent of anyone's frame rate)
+                const dt = tRecv - r.tRecv;
+                if (dt > 20 && dt < 1000) { r.vx = r.vx * 0.5 + ((nx - r.tx) / dt) * 0.5; r.vz = r.vz * 0.5 + ((nz - r.tz) / dt) * 0.5; }
+            }
+            r.tx = nx; r.tz = nz; r.ta = mpNum(p.a); r.tv = mpNum(p.v); r.cp = mpNum(p.cp) | 0;
+            if (!r.init || tRecv > r.tRecv) r.tRecv = tRecv;
             if (!r.init) { r.init = true; r.root.position.set(r.tx, physics.carY, r.tz); r.root.rotation.y = r.ta; r.root.visible = true; }
         }
 
         // ---- per frame: glide remote cars toward where they should be now ----
         function mpFrame() {
             if (!mpRole) return;
+            if (mpRole === 'host' && mp.trafficOn) mp.S += 1; // one tick per host game frame
             const now = performance.now();
             mp.remotes.forEach(r => {
                 if (!r.init) return;
-                const age = Math.min(12, (now - r.tRecv) * 0.06 + mp.rtt * 0.03);
-                const k = r.tv * physics.masterSpeed * age;
-                const ex = r.tx + Math.sin(r.ta) * k, ez = r.tz + Math.cos(r.ta) * k;
+                const age = Math.min(250, (now - r.tRecv) + mp.rtt * 0.5);
+                const ex = r.tx + r.vx * age, ez = r.tz + r.vz * age;
                 r.root.position.x += (ex - r.root.position.x) * 0.3;
                 r.root.position.z += (ez - r.root.position.z) * 0.3;
                 r.root.position.y = physics.carY;
@@ -3873,7 +3883,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             peer.on('open', () => {
                 if (g !== mp.gen) { try { peer.destroy(); } catch (e) {} return; }
                 mp.code = code; mpRole = 'host'; mp.players.clear(); mp.nextId = 1;
-                rebuildAiCars(); mp.t0 = performance.now(); mp.trafficOn = true;
+                rebuildAiCars(); mp.S = 0; mp.trafficOn = true;
                 mp.timers.push(setInterval(mpHostSend, 80));
                 mp.timers.push(setInterval(() => mpAnnounce(), 90000));
                 mpAnnounce(); mpUpdateUi(); mpHudRender();
@@ -3979,9 +3989,16 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
                 mpSetRemoteState(r, { x: e[1], z: e[2], a: e[3], v: e[4], cp: e[5] }, now - mpNum(e[6]));
             });
             Array.from(mp.remotes.keys()).forEach(id => { if (!seen.has(id)) mpRemoveRemote(id); });
-            // follow the host's traffic scroll (S): small gaps are eased out, big jumps (host reset) snap
-            const target = mpNum(m.S) + mp.rtt * 0.03, diff = target - (now * 0.06 + mp.sOff);
-            if (!mp.synced || Math.abs(diff) > 20) { mp.sOff += diff; mp.synced = true; } else mp.sOff += diff * 0.2;
+            // follow the host's traffic scroll (S) at the host's real speed: measure its rate every ~half second
+            if (mp.refS === null || mpNum(m.S) < mp.refS) { mp.refS = mpNum(m.S); mp.refT = now; }
+            else if (now - mp.refT >= 500) {
+                const r = (mpNum(m.S) - mp.refS) / (now - mp.refT);
+                if (r > 0 && r < 0.5) mp.rate = mp.synced ? mp.rate * 0.5 + r * 0.5 : r;
+                mp.refS = mpNum(m.S); mp.refT = now;
+            }
+            const target = mpNum(m.S) + mp.rate * mp.rtt * 0.5, pred = mp.sAnchor + mp.rate * (now - mp.tAnchor), diff = target - pred;
+            if (!mp.synced || Math.abs(diff) > 20) { mp.sAnchor = target; mp.synced = true; } else mp.sAnchor = pred + diff * 0.2;
+            mp.tAnchor = now;
             mpUpdateUi();
         }
 
@@ -4016,7 +4033,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
                 mp.conn.send({ t: 'ready', car: playerCarName, pt: mpPlateText(), po: getPlayerPlateCfg().plateOn ? 1 : 0 });
                 mp.timers.push(setInterval(mpGuestSend, 66));
                 mp.timers.push(setInterval(() => { if (g === mp.gen && mp.conn && mp.conn.open) { try { mp.conn.send({ t: 'ping', ts: performance.now() }); } catch (e) {} } }, 2000));
-                rebuildAiCars(); mp.synced = false; mp.trafficOn = true;
+                rebuildAiCars(); mp.synced = false; mp.refS = null; mp.rate = 0.06; mp.trafficOn = true;
                 mpUpdateUi(); mpHudRender();
             }
         }
@@ -4027,7 +4044,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             clearTimeout(mp.joinTimer); mp.timers.forEach(clearInterval); mp.timers = [];
             Array.from(mp.remotes.keys()).forEach(mpRemoveRemote);
             mp.players.clear(); mp.peer = null; mp.conn = null; mp.rtt = 0; mp.id = 0;
-            mpRole = null; mpHostCar = ''; mpSlot = 0; mpPending = null; mp.trafficOn = false; mp.synced = false; mp.sOff = 0; mp.listSig = '';
+            mpRole = null; mpHostCar = ''; mpSlot = 0; mpPending = null; mp.trafficOn = false; mp.synced = false; mp.refS = null; mp.rate = 0.06; mp.S = 0; mp.listSig = '';
             setTimeout(() => { try { if (conn) conn.close(); } catch (e) {} try { if (peer) peer.destroy(); } catch (e) {} }, wasHost ? 350 : 0);
             mpUpdateUi();
         }
