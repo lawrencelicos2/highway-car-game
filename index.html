@@ -657,6 +657,7 @@ body.playing #mpHud.on { display: block; }
         <div id="trafficList"></div>
         <div class="json-section">
             <label>Traffic Car List JSON (offsets):</label>
+            <div style="font-size:10px;color:#64748b;margin:3px 0 6px;">Player cars reuse matching entries by vehicle name (Mazda, Lambo/Lamborghini, Toyota Sedan), including rotation, scale and X/Y/Z offsets.</div>
             <textarea id="trafficJsonBox"></textarea>
             <div class="btn-row">
                 <button id="copyTrafficJson">Copy Traffic JSON</button>
@@ -2874,28 +2875,61 @@ body.playing #mpHud.on { display: block; }
 
         renderTrafficList(); updateTrafficJson();
 
+        // Match a player-selected car to its Traffic Car JSON entry. Model filenames
+        // often include extensions or slightly different separators, so compare a
+        // normalized name and known vehicle aliases instead of requiring exact text.
+        function normalizeVehicleName(value) {
+            return String(value || '')
+                .toLowerCase()
+                .replace(/\.(glb|gltf|fbx)$/i, '')
+                .replace(/[^a-z0-9]+/g, '');
+        }
+        function vehicleAliases(value) {
+            const n = normalizeVehicleName(value);
+            const out = new Set([n]);
+            if (n.includes('mazda')) out.add('mazda');
+            if (n.includes('lamborghini') || /(^|[^a-z])lambo([^a-z]|$)/i.test(String(value || '')) || n.includes('lambo')) { out.add('lambo'); out.add('lamborghini'); }
+            if (n.includes('toyota') && (n.includes('sedan') || n === 'toyota')) { out.add('toyotasedan'); out.add('toyota'); }
+            return out;
+        }
         function getPlayerTrafficMatch() {
             if (!playerCarName) return null;
-            const n = playerCarName.toLowerCase();
-            return trafficModels.find(m => m.name.toLowerCase() === n) || null;
+            const playerNames = vehicleAliases(playerCarName);
+            // Prefer an exact normalized match, then match the requested Mazda,
+            // Lamborghini/Lambo, or Toyota Sedan family.
+            const exact = trafficModels.find(m => normalizeVehicleName(m.name) === normalizeVehicleName(playerCarName));
+            if (exact) return exact;
+            return trafficModels.find(m => {
+                const aliases = vehicleAliases(m.name);
+                return [...playerNames].some(n => aliases.has(n));
+            }) || null;
         }
 
         function applyPlayerCarTransform() {
             playerPlateGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
-            const lancerY = /lancer/i.test(playerCarName || '') ? LANCER_Y * physics.carScale : 0; // player Lancer sits 0.2 lower
-            carModelGroup.position.y = lancerY; playerPlateGroup.position.y = lancerY;
+            const lancerY = /lancer/i.test(playerCarName || '') ? LANCER_Y * physics.carScale : 0;
             const match = getPlayerTrafficMatch();
             if (match) {
-                carModelGroup.rotation.x = THREE.MathUtils.degToRad(match.rotX);
-                carModelGroup.rotation.y = THREE.MathUtils.degToRad(match.rotY);
-                carModelGroup.rotation.z = THREE.MathUtils.degToRad(match.rotZ);
-                const sc = physics.carScale * match.scale;
+                // Reuse the selected traffic JSON entry for the player's model too:
+                // rotation, scale and X/Y/Z offsets all come from that vehicle entry.
+                carModelGroup.rotation.set(
+                    THREE.MathUtils.degToRad(match.rotX || 0),
+                    THREE.MathUtils.degToRad(match.rotY || 0),
+                    THREE.MathUtils.degToRad(match.rotZ || 0)
+                );
+                const sc = physics.carScale * (Number.isFinite(match.scale) ? match.scale : 1);
                 carModelGroup.scale.set(sc, sc, sc);
+                carModelGroup.position.set(match.posX || 0, lancerY + (match.posY || 0), match.posZ || 0);
+                playerPlateGroup.position.set(match.posX || 0, lancerY + (match.posY || 0), match.posZ || 0);
             } else {
-                carModelGroup.rotation.x = THREE.MathUtils.degToRad(physics.rotX);
-                carModelGroup.rotation.y = THREE.MathUtils.degToRad(physics.rotY);
-                carModelGroup.rotation.z = THREE.MathUtils.degToRad(physics.rotZ);
+                carModelGroup.rotation.set(
+                    THREE.MathUtils.degToRad(physics.rotX || 0),
+                    THREE.MathUtils.degToRad(physics.rotY || 0),
+                    THREE.MathUtils.degToRad(physics.rotZ || 0)
+                );
                 carModelGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
+                carModelGroup.position.set(0, lancerY, 0);
+                playerPlateGroup.position.set(0, lancerY, 0);
             }
         }
 
