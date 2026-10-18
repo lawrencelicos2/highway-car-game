@@ -401,6 +401,16 @@ body.playing #carHud { display: block; }
             <button class="mbtn" id="pmOptions">DEBUG MODE</button>
             <button class="mbtn" id="pmReset">RESET</button>
             <button class="mbtn ghost" id="pmQuit">QUIT</button>
+            <div class="pltitle">RESOLUTION</div>
+            <div class="plrow" style="align-items:center">
+                <input type="range" id="resSlider" min="10" max="100" step="5" value="100" style="flex:1;min-width:0;accent-color:#fff">
+                <input type="number" id="resNum" min="10" max="200" step="5" value="100" style="width:62px;padding:8px;border-radius:8px;border:2px solid #fff;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:13px;box-sizing:border-box;font-family:inherit">
+                <span style="font-weight:700">%</span>
+            </div>
+            <div id="resInfo" style="font-size:11px;opacity:.75;text-align:center"></div>
+            <style>.pbox{max-height:92vh;overflow-y:auto}</style>
+            <div class="pltitle">CLOUDS</div>
+            <div id="pmClouds"></div>
             <div class="pltitle">LICENSE PLATE</div>
             <div class="plrow">
                 <input type="text" id="pmPlateText" maxlength="16" placeholder="Your plate text">
@@ -933,7 +943,41 @@ body.playing #carHud { display: block; }
         </div>
         <div class="control-group">
             <label>Traffic Car Reflections:</label>
-            <select id="trafficReflections"><option value="1" selected>On</option><option value="0">Off</option></select>
+            <select id="trafficReflections"><option value="1" selected>On</option><option value="0">Off</option></select></div>
+        <div class="control-group">
+            <label>Cloud Cover (0 = no clouds, 1 = overcast):</label>
+            <div class="input-pair">
+                <input type="range" id="cloudCover" min="0" max="1" step="0.01" value="0.45">
+                <input type="number" id="num-cloudCover" step="0.01" value="0.45">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Cloud Density (thin to thick):</label>
+            <div class="input-pair">
+                <input type="range" id="cloudDensity" min="0" max="1" step="0.01" value="0.7">
+                <input type="number" id="num-cloudDensity" step="0.01" value="0.7">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Cloud Speed (wind):</label>
+            <div class="input-pair">
+                <input type="range" id="cloudSpeed" min="0" max="80" step="0.5" value="8">
+                <input type="number" id="num-cloudSpeed" step="0.5" value="8">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Cloud Height:</label>
+            <div class="input-pair">
+                <input type="range" id="cloudHeight" min="150" max="3000" step="10" value="900">
+                <input type="number" id="num-cloudHeight" step="10" value="900">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>Cloud Brightness:</label>
+            <div class="input-pair">
+                <input type="range" id="cloudBrightness" min="0" max="3" step="0.05" value="1">
+                <input type="number" id="num-cloudBrightness" step="0.05" value="1">
+            </div>
         </div>
         <div class="json-section">
             <label>Lighting & Effects JSON Config:</label>
@@ -1226,7 +1270,12 @@ body.playing #carHud { display: block; }
             motionBlur: 1,
             motionBlurStrength: 0.08,
             trafficReflections: 1,
-            dofStrength: 0
+            dofStrength: 0,
+            cloudCover: 0.45,
+            cloudDensity: 0.7,
+            cloudSpeed: 8,
+            cloudHeight: 900,
+            cloudBrightness: 1
         };
         let envConfig = { ...defaultEnvConfig };
         let cameraMode = 'car';
@@ -1447,6 +1496,26 @@ body.playing #carHud { display: block; }
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // ---- RENDER RESOLUTION (slider + number box in the pause menu; lower % = fewer pixels = less lag) ----
+        const resBase = Math.min(window.devicePixelRatio, 2);
+        function applyRes(pct, save) {
+            pct = Math.round(parseFloat(pct));
+            if (!(pct >= 10)) pct = 100;
+            pct = Math.min(200, pct);
+            renderer.setPixelRatio(resBase * pct / 100);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            const sl = document.getElementById('resSlider'), nm = document.getElementById('resNum'), inf = document.getElementById('resInfo');
+            if (sl) sl.value = Math.min(100, pct);
+            if (nm) nm.value = pct;
+            if (inf) inf.textContent = Math.round(window.innerWidth * resBase * pct / 100) + ' x ' + Math.round(window.innerHeight * resBase * pct / 100) + ' pixels';
+            if (save) { try { localStorage.setItem('renderScale', String(pct)); } catch (err) {} }
+        }
+        document.getElementById('resSlider').addEventListener('input', e => applyRes(e.target.value, true));
+        document.getElementById('resNum').addEventListener('change', e => applyRes(e.target.value, true));
+        document.getElementById('resNum').addEventListener('keyup', e => { if (e.key === 'Enter') applyRes(e.target.value, true); });
+        window.addEventListener('resize', () => applyRes(document.getElementById('resNum').value, false));
+        let resSaved = 100; try { const s = parseFloat(localStorage.getItem('renderScale')); if (s >= 10 && s <= 200) resSaved = s; } catch (err) {}
+        applyRes(resSaved, false);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1576,7 +1645,8 @@ body.playing #carHud { display: block; }
             buildingColorVariation: 0.35,
             buildingWindowGlow: 0.6,
             buildingLitRatio: 0.35,
-            buildingSeed: 7
+            buildingSeed: 7,
+            buildingTexSize: 20
         };
         let buildingConfig = { ...defaultBuildingConfig };
         const buildingSliderKeys = [
@@ -1600,6 +1670,7 @@ body.playing #carHud { display: block; }
             ['buildingColorVariation', 'Colour Variation', 0, 1, 0.05],
             ['buildingWindowGlow', 'Window Glow', 0, 3, 0.05],
             ['buildingLitRatio', 'Lit Windows Amount', 0, 1, 0.05],
+            ['buildingTexSize', 'Building Texture Size (world units per tile)', 2, 200, 1],
             ['buildingSeed', 'Random Seed (new layout)', 0, 999, 1]
         ];
 
@@ -1624,6 +1695,7 @@ body.playing #carHud { display: block; }
         scene.add(buildingGroup);
         let bldSegLen = 1000;
         let bldTextures = [], bldMaterials = [];
+        let bldImgFiles = [], bldImgCache = new Map();
         const BLD_COL_W = 3.5, BLD_FLOOR_H = 4, BLD_TILE_COLS = 8, BLD_TILE_ROWS = 8;
 
         function bldRng(seed) {
@@ -1688,6 +1760,24 @@ body.playing #carHud { display: block; }
             return [mk(wall), mk(glow)];
         }
 
+        /*BLDTEX*/
+        async function loadBuildingImages() {
+            await Promise.all(bldImgFiles.map(f => {
+                if (bldImgCache.has(f.name)) return null;
+                return new Promise(res => {
+                    const url = f.siteUrl || URL.createObjectURL(f);
+                    new THREE.TextureLoader().load(url, t => {
+                        if (!f.siteUrl) URL.revokeObjectURL(url);
+                        t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.RepeatWrapping;
+                        t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+                        const im = t.image;
+                        bldImgCache.set(f.name, { name: f.name, tex: t, aspect: (im && im.width) ? im.height / im.width : 1, mat: null });
+                        res();
+                    }, undefined, () => { if (!f.siteUrl) URL.revokeObjectURL(url); res(); });
+                });
+            }));
+        }
+
         function rebuildBuildings() {
             disposeBuildings();
             const c = buildingConfig;
@@ -1739,6 +1829,20 @@ body.playing #carHud { display: block; }
             }
             const topMat = new THREE.MeshStandardMaterial({ color: base.clone().multiplyScalar(0.55), roughness: 0.9, metalness: 0 });
             bldMaterials = sideMats.concat([topMat]);
+            const imgList = Array.from(bldImgCache.values()).sort((a, b) => a.name.localeCompare(b.name));
+            const texSize = Math.max(1, num(c.buildingTexSize, 20));
+            let roofM = topMat;
+            if (imgList.length) {
+                roofM = new THREE.MeshStandardMaterial({ color: 0x3b3f45, roughness: 0.95, metalness: 0 });
+                bldMaterials.push(roofM);
+                imgList.forEach(e => {
+                    e.mat = new THREE.MeshStandardMaterial({
+                        color: 0xffffff, map: e.tex, emissive: new THREE.Color(0xffffff), emissiveMap: e.tex,
+                        emissiveIntensity: glowAmt * 0.2, roughness: 0.7, metalness: 0.05
+                    });
+                    bldMaterials.push(e.mat);
+                });
+            }
 
             const carZ = carContainer.position.z;
             const k0 = Math.floor((carZ - zOff) / seg) - 1;
@@ -1747,6 +1851,7 @@ body.playing #carHud { display: block; }
                 const chunk = new THREE.Group();
                 chunk.position.z = zOff + (k0 + i) * seg;
                 const rng = bldRng(seed * 1000 + i * 7919 + 13);
+                const trng = bldRng(seed * 777 + i * 104729 + 1);
 
                 sides.forEach(side => {
                     for (let r = 0; r < rows; r++) {
@@ -1767,6 +1872,7 @@ body.playing #carHud { display: block; }
                             d = Math.max(BLD_COL_W * 2, Math.round(d / BLD_COL_W) * BLD_COL_W);
                             h = Math.max(BLD_FLOOR_H * 2, Math.round(h / BLD_FLOOR_H) * BLD_FLOOR_H);
 
+                            const imgEnt = imgList.length ? imgList[Math.floor(trng() * imgList.length)] : null;
                             const geo = new THREE.BoxGeometry(d, h, w);
                             const uv = geo.attributes.uv;
                             // face order: +x, -x, +y, -y, +z, -z (4 verts each)
@@ -1775,12 +1881,16 @@ body.playing #carHud { display: block; }
                                 if (face === 2 || face === 3) continue;
                                 const horiz = face < 2 ? w : d;
                                 const tileW = BLD_COL_W * BLD_TILE_COLS, tileH = BLD_FLOOR_H * BLD_TILE_ROWS;
-                                uv.setXY(v, uv.getX(v) * horiz / tileW + uOff, uv.getY(v) * h / tileH);
+                                if (imgEnt) {
+                                    // whole tiles per wall, starts at 0: seamless, no offset, no gaps
+                                    const tw = texSize, th = texSize * imgEnt.aspect;
+                                    uv.setXY(v, uv.getX(v) * Math.max(1, Math.round(horiz / tw)), uv.getY(v) * Math.max(1, Math.round(h / th)));
+                                } else uv.setXY(v, uv.getX(v) * horiz / tileW + uOff, uv.getY(v) * h / tileH);
                             }
                             uv.needsUpdate = true;
 
-                            const sm = sideMats[matIdx];
-                            const mesh = new THREE.Mesh(geo, [sm, sm, topMat, topMat, sm, sm]);
+                            const sm = imgEnt ? imgEnt.mat : sideMats[matIdx];
+                            const mesh = new THREE.Mesh(geo, [sm, sm, roofM, roofM, sm, sm]);
                             mesh.position.set(side * (rowStart + d / 2) + shiftX, h / 2, cursor + w / 2);
                             mesh.rotation.y = rotY;
                             mesh.castShadow = false; mesh.receiveShadow = false;
@@ -2383,6 +2493,101 @@ body.playing #carHud { display: block; }
         });
         const dofPassScene = makePostScene(dofMaterial);
         const depthMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+        /*CLOUDS*/
+        const cloudMaterial = new THREE.ShaderMaterial({
+            transparent: true, depthWrite: false, depthTest: true, side: THREE.BackSide, fog: false,
+            uniforms: {
+                uWind: { value: new THREE.Vector2() }, uTime: { value: 0 },
+                uCover: { value: 0.45 }, uDensity: { value: 0.7 }, uHeight: { value: 900 }, uBright: { value: 1 },
+                uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSunCol: { value: new THREE.Color(1, 1, 1) }, uDay: { value: 1 }
+            },
+            vertexShader: `
+                varying vec3 vWorld;
+                void main() {
+                    vec4 wp = modelMatrix * vec4(position, 1.0);
+                    vWorld = wp.xyz;
+                    gl_Position = projectionMatrix * viewMatrix * wp;
+                }`,
+            fragmentShader: `
+                uniform vec2 uWind; uniform float uTime, uCover, uDensity, uHeight, uBright, uDay;
+                uniform vec3 uSunDir, uSunCol;
+                varying vec3 vWorld;
+                float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+                float noise(vec2 p) {
+                    vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+                    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+                }
+                float fbm(vec2 p) {
+                    float v = 0.0, a = 0.5; mat2 m = mat2(1.6, 1.2, -1.2, 1.6);
+                    for (int i = 0; i < 5; i++) { v += a * noise(p); p = m * p; a *= 0.5; }
+                    return v;
+                }
+                // returns rgb + alpha of one cloud layer
+                vec4 layer(vec3 dir, float h, float cover, float seed, float windMul) {
+                    float t = h / dir.y;
+                    vec2 w = cameraPosition.xz + dir.xz * t + uWind * windMul;
+                    float scale = 1.0 / (h * 0.9);
+                    vec2 p = w * scale + seed;
+                    // slow domain warp = the clouds keep changing shape while they drift
+                    p += 0.35 * vec2(noise(p * 0.6 + uTime * 0.015), noise(p * 0.6 + 17.0 - uTime * 0.012));
+                    float d = fbm(p);
+                    float thr = mix(0.80, 0.18, cover);
+                    float c = smoothstep(thr, thr + 0.24, d);
+                    // shade: look a little toward the sun, denser there = this part is in shadow
+                    vec2 sd = normalize(uSunDir.xz + vec2(0.0001)) * 0.07;
+                    float d2 = fbm(p + sd);
+                    float lit = clamp(0.62 + (d - d2) * 5.0, 0.0, 1.0);
+                    float thick = smoothstep(thr, thr + 0.45, d);
+                    lit *= mix(1.0, 0.55, thick * uDensity);
+                    float warm = (1.0 - smoothstep(0.0, 0.35, uSunDir.y)) * uDay;
+                    vec3 litCol = mix(vec3(1.0), uSunCol, 0.35) * (0.30 + 0.70 * uDay);
+                    litCol = mix(litCol, vec3(1.0, 0.58, 0.32), warm * 0.55);
+                    vec3 shCol = vec3(0.50, 0.57, 0.70) * (0.22 + 0.78 * uDay);
+                    float a = clamp(c * (0.35 + 0.95 * uDensity), 0.0, 1.0);
+                    return vec4(mix(shCol, litCol, lit), a);
+                }
+                void main() {
+                    vec3 dir = normalize(vWorld - cameraPosition);
+                    float horizon = smoothstep(0.02, 0.20, dir.y);
+                    if (horizon <= 0.0) discard;
+                    vec4 c1 = layer(dir, uHeight, uCover, 0.0, 1.0);
+                    vec4 c2 = layer(dir, uHeight * 1.7, uCover * 0.85, 31.7, 0.6);
+                    c2.a *= 0.65;
+                    float a = c1.a + c2.a * (1.0 - c1.a);
+                    if (a < 0.003) discard;
+                    vec3 col = (c1.rgb * c1.a + c2.rgb * c2.a * (1.0 - c1.a)) / a;
+                    gl_FragColor = vec4(col * uBright, a * horizon);
+                    #include <tonemapping_fragment>
+                    #include <encodings_fragment>
+                }`
+        });
+        // upper half of a big sphere that follows the camera
+        const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(4500, 32, 12, 0, Math.PI * 2, 0, Math.PI / 2), cloudMaterial);
+        cloudMesh.frustumCulled = false; cloudMesh.renderOrder = 1;
+        scene.add(cloudMesh);
+        const cloudWindDir = new THREE.Vector2(1, 0.25).normalize();
+        const cloudTmpV = new THREE.Vector3();
+        let cloudLast = performance.now() / 1000;
+        function updateClouds() {
+            const c = envConfig;
+            const cover = Math.max(0, Math.min(1, +c.cloudCover || 0));
+            cloudMesh.visible = cover > 0.005;
+            const now = performance.now() / 1000, dt = Math.min(0.1, Math.max(0, now - cloudLast)); cloudLast = now;
+            if (!cloudMesh.visible) return;
+            const u = cloudMaterial.uniforms;
+            u.uWind.value.addScaledVector(cloudWindDir, (+c.cloudSpeed || 0) * dt);
+            camera.getWorldPosition(cloudTmpV); cloudMesh.position.copy(cloudTmpV);
+            const az = THREE.MathUtils.degToRad(c.sunAzimuth), el = THREE.MathUtils.degToRad(c.sunElevation);
+            u.uSunDir.value.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+            u.uSunCol.value.set(c.sunColor);
+            u.uDay.value = THREE.MathUtils.smoothstep(u.uSunDir.value.y, -0.12, 0.2);
+            u.uTime.value = now % 100000;
+            u.uCover.value = cover;
+            u.uDensity.value = Math.max(0, Math.min(1, +c.cloudDensity || 0));
+            u.uHeight.value = Math.max(100, +c.cloudHeight || 900);
+            u.uBright.value = Math.max(0, +c.cloudBrightness);
+        }
+
 
         function ensurePostTargets(needDof) {
             const size = renderer.getDrawingBufferSize(new THREE.Vector2());
@@ -2402,6 +2607,7 @@ body.playing #carHud { display: block; }
         }
 
         function renderFrame() {
+            updateClouds();
             const speedRatio = Math.min(1.5, Math.abs(currentSpeed * physics.masterSpeed) / 7.0);
             const blurAmount = envConfig.motionBlur ? envConfig.motionBlurStrength * 0.2 * speedRatio : 0;
             const useBlur = blurAmount > 0.0005;
@@ -2415,10 +2621,11 @@ body.playing #carHud { display: block; }
             if (useDof) {
                 const prevBg = scene.background, prevFog = scene.fog, prevAuto = renderer.shadowMap.autoUpdate;
                 const prevClear = new THREE.Color(); renderer.getClearColor(prevClear); const prevAlpha = renderer.getClearAlpha();
+                const cloudWasVisible = cloudMesh.visible; cloudMesh.visible = false;
                 scene.background = null; scene.fog = null; scene.overrideMaterial = depthMaterial;
                 renderer.shadowMap.autoUpdate = false; renderer.setClearColor(0xffffff, 1);
                 renderer.setRenderTarget(depthTarget); renderer.render(scene, camera);
-                scene.overrideMaterial = null; scene.background = prevBg; scene.fog = prevFog; renderer.shadowMap.autoUpdate = prevAuto;
+                scene.overrideMaterial = null; cloudMesh.visible = cloudWasVisible; scene.background = prevBg; scene.fog = prevFog; renderer.shadowMap.autoUpdate = prevAuto;
                 renderer.setClearColor(prevClear, prevAlpha);
 
                 const u = dofMaterial.uniforms;
@@ -2906,10 +3113,11 @@ body.playing #carHud { display: block; }
             }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
         }
         function classifyFiles(files) {
-            const out = { cars: [], skies: [], hw: [], carCfgFile: null, trafficCfgFile: null, buildingCfgFile: null, pic: null };
+            const out = { buildingTex: [], cars: [], skies: [], hw: [], carCfgFile: null, trafficCfgFile: null, buildingCfgFile: null, pic: null };
             files.forEach(f => {
                 const n = f.name.toLowerCase();
-                if (/^menupic\.(jpe?g|png|webp)$/.test(n)) out.pic = f;
+                if (/building_texture/.test(n) && /\.webp$/.test(n)) out.buildingTex.push(f);
+                else if (/^menupic\.(jpe?g|png|webp)$/.test(n)) out.pic = f;
                 else if (n === 'car_config.txt' || n === 'car_config') out.carCfgFile = f;
                 else if (n === 'traffic_config.txt' || n === 'traffic_config') out.trafficCfgFile = f;
                 else if (/^buildings?_config(\.txt)?$/.test(n)) out.buildingCfgFile = f;
@@ -2923,10 +3131,12 @@ body.playing #carHud { display: block; }
             lib.cars = c.cars; lib.skies = c.skies; lib.maps = groupMapFiles(c.hw); lib.pic = c.pic;
             lib.carCfgFile = c.carCfgFile; lib.trafficCfgFile = c.trafficCfgFile; lib.buildingCfgFile = c.buildingCfgFile;
             libSource = source;
+            bldImgCache.forEach(e => e.tex.dispose()); bldImgCache.clear();
+            bldImgFiles = c.buildingTex.slice().sort((a, b) => a.name.localeCompare(b.name));
             modelCache.clear(); thumbCache.clear(); selCar = selSky = selMap = null;
             const byName = (a, b) => a.name.localeCompare(b.name);
             lib.cars.sort(byName); lib.skies.sort(byName);
-            lib.manifestNames = Array.from(new Set([].concat(lib.cars, lib.skies, c.hw, [lib.carCfgFile, lib.trafficCfgFile, lib.buildingCfgFile, lib.pic]).filter(Boolean).map(f => f.name)));
+            lib.manifestNames = Array.from(new Set([].concat(lib.cars, lib.skies, c.hw, c.buildingTex, [lib.carCfgFile, lib.trafficCfgFile, lib.buildingCfgFile, lib.pic]).filter(Boolean).map(f => f.name)));
             const notes = [];
             carCfg = await readJson(lib.carCfgFile, 'car_config.txt', notes);
             trafficCfg = await readJson(lib.trafficCfgFile, 'traffic_config.txt', notes);
@@ -2935,7 +3145,7 @@ body.playing #carHud { display: block; }
                 (source === 'site' ? 'Loaded automatically from this site\n' : '') +
                 'Cars: ' + lib.cars.length + '   |   Skies: ' + lib.skies.length + '   |   Highways: ' + lib.maps.length + '\n' +
                 'car_config.txt: ' + (carCfg ? 'found' : 'not found') + '   |   traffic_config.txt: ' + (trafficCfg ? 'found' : 'not found') + '\n' +
-                'building_config.txt: ' + (buildingCfg ? 'found' : 'not found') + '   |   menupic: ' + (lib.pic ? 'found' : 'not found') +
+                'building_config.txt: ' + (buildingCfg ? 'found' : 'not found') + '   |   Building textures: ' + c.buildingTex.length + '   |   menupic: ' + (lib.pic ? 'found' : 'not found') +
                 (notes.length ? '\n' + notes.join('\n') : '');
             if (menuPicUrl) URL.revokeObjectURL(menuPicUrl);
             menuPicUrl = lib.pic ? (lib.pic.siteUrl || URL.createObjectURL(lib.pic)) : null;
@@ -3004,6 +3214,15 @@ body.playing #carHud { display: block; }
                     }
                 } catch (err) {}
             }
+            /*REPOFOLDER*/
+            try {
+                const rr = await fetch('https://api.github.com/repos/lawrencelicos2/highway-car-game/contents/?ref=main');
+                if (rr.ok) {
+                    const jj = await rr.json();
+                    const nn = Array.isArray(jj) ? jj.filter(x => x.type === 'file').map(x => x.name) : [];
+                    if (nn.length) return nn;
+                }
+            } catch (err) {}
             // 3) last resort: probe the names the game knows (configs, menupic, HIGHWAY<n>.<m>.glb). Cars and skies need game_files.json.
             const names = [];
             const fixed = ['car_config.txt', 'traffic_config.txt', 'building_config.txt', 'buildings_config.txt', 'menupic.jpg', 'menupic.jpeg', 'menupic.png', 'menupic.webp'];
@@ -3222,6 +3441,8 @@ body.playing #carHud { display: block; }
                 }
             } catch (err) { say('Something went wrong: ' + err); }
 
+            try { if (bldImgFiles.length) { say('Loading building textures: ' + bldImgFiles.length); await loadBuildingImages(); } }
+            catch (err) { say('  building textures failed'); }
             carsPassedCount = 0; currentSpeed = 0; carAngle = 0;
             carContainer.position.set(0, physics.carY, 0);
             rebuildBuildings();
@@ -3238,7 +3459,7 @@ body.playing #carHud { display: block; }
             $m('pauseMenu').classList.toggle('open', st === 'menu');
             $m('ui-panel').classList.toggle('open', st === 'options');
             if (gamePaused) Object.keys(keys).forEach(k => { keys[k] = false; });
-            if (st === 'menu') syncPlateInputs();
+            if (st === 'menu') { syncPlateInputs(); syncPmClouds(); }
         }
         function syncPlateInputs() {
             const c = getPlayerPlateCfg();
@@ -3263,6 +3484,38 @@ body.playing #carHud { display: block; }
             $m('menuRoot').classList.remove('hidden'); showScreen('screenMain');
         }
         $m('pmResume').addEventListener('click', () => setPauseState('none'));
+        /*PMCLOUDS*/
+        const pmCloudDefs = [
+            ['cloudCover', 'Cover (0 = no clouds)', 0, 1, 0.01],
+            ['cloudDensity', 'Density', 0, 1, 0.01],
+            ['cloudSpeed', 'Wind Speed', 0, 80, 0.5],
+            ['cloudHeight', 'Height', 150, 3000, 10],
+            ['cloudBrightness', 'Brightness', 0, 3, 0.05]
+        ];
+        (function buildPmClouds() {
+            const numCss = 'width:62px;padding:8px;border-radius:8px;border:2px solid #fff;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:13px;box-sizing:border-box;font-family:inherit';
+            $m('pmClouds').innerHTML = pmCloudDefs.map(([k, label, mn, mx, st]) =>
+                '<div style="font-size:11px;opacity:.85;margin-top:4px">' + label + '</div>' +
+                '<div class="plrow" style="align-items:center">' +
+                '<input type="range" id="pm-' + k + '" min="' + mn + '" max="' + mx + '" step="' + st + '" value="' + envConfig[k] + '" style="flex:1;min-width:0;accent-color:#fff">' +
+                '<input type="number" id="pmn-' + k + '" step="' + st + '" value="' + envConfig[k] + '" style="' + numCss + '"></div>'
+            ).join('');
+            pmCloudDefs.forEach(([k]) => {
+                const r = $m('pm-' + k), n = $m('pmn-' + k);
+                const on = ev => {
+                    const v = parseFloat(ev.target.value); if (isNaN(v)) return;
+                    envConfig[k] = v; r.value = v; if (n !== ev.target) n.value = v;
+                    const d = document.getElementById(k), dn = document.getElementById('num-' + k);
+                    if (d) d.value = v; if (dn) dn.value = v;
+                    updateEnvJson();
+                };
+                r.addEventListener('input', on); n.addEventListener('input', on);
+            });
+        })();
+        function syncPmClouds() {
+            pmCloudDefs.forEach(([k]) => { $m('pm-' + k).value = envConfig[k]; $m('pmn-' + k).value = envConfig[k]; });
+        }
+
         // ---- DEBUG MODE (password protected, stays unlocked until the page is reloaded) ----
         const dbgSum = s => { s = 'hs|' + s; let h1 = 0xdeadbeef, h2 = 0x41c6ce57; for (let i = 0, ch; i < s.length; i++) { ch = s.charCodeAt(i); h1 = Math.imul(h1 ^ ch, 2654435761); h2 = Math.imul(h2 ^ ch, 1597334677); } h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909); h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909); return 4294967296 * (2097151 & h2) + (h1 >>> 0); };
         const dbgKey = 3966873354684944;
