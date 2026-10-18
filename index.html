@@ -2008,7 +2008,7 @@ body.playing #mpHud.on { display: block; }
             { "name": "FINAL_MODEL_GTS.fbx", "rotX": 0, "rotY": 0, "rotZ": 0, "scale": 1, "hbW": 2, "hbH": 1.5, "hbL": 3.5, "hbX": 0, "hbY": 0.75, "hbZ": 0, "posX": 0, "posY": 0, "posZ": 0 }
         ];
         let playerCarName = '';
-        const LANCER_Y = -0.2; // the Lancer sits 0.2 lower than its traffic_config says
+        const LANCER_Y = -0.2; // the PLAYER's Lancer (own car and as seen by other players) sits 0.2 lower; Lancer traffic is untouched
         let mpRole = null, mpHostCar = '', mpSlot = 0; // multiplayer: 'host' / 'guest' / null
 
         const DEFAULT_HITBOX = { hbW: 2, hbH: 1.5, hbL: 3.5, hbX: 0, hbY: 0.75, hbZ: 0 };
@@ -2260,7 +2260,6 @@ body.playing #mpHud.on { display: block; }
                 wrapper.add(modelClone);
                 wrapper.rotation.set(THREE.MathUtils.degToRad(entry.rotX), THREE.MathUtils.degToRad(entry.rotY), THREE.MathUtils.degToRad(entry.rotZ));
                 wrapper.scale.set(entry.scale, entry.scale, entry.scale);
-                if (/lancer/i.test(entry.name)) wrapper.position.y = LANCER_Y;
             } else if (baseCarSourceModel) {
                 wrapper.add(baseCarSourceModel.clone(true));
             } else {
@@ -2883,6 +2882,8 @@ body.playing #mpHud.on { display: block; }
 
         function applyPlayerCarTransform() {
             playerPlateGroup.scale.set(physics.carScale, physics.carScale, physics.carScale);
+            const lancerY = /lancer/i.test(playerCarName || '') ? LANCER_Y * physics.carScale : 0; // player Lancer sits 0.2 lower
+            carModelGroup.position.y = lancerY; playerPlateGroup.position.y = lancerY;
             const match = getPlayerTrafficMatch();
             if (match) {
                 carModelGroup.rotation.x = THREE.MathUtils.degToRad(match.rotX);
@@ -3767,7 +3768,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
             if (match) { r.mg.rotation.set(d(match.rotX), d(match.rotY), d(match.rotZ)); const s = physics.carScale * match.scale; r.mg.scale.set(s, s, s); }
             else { r.mg.rotation.set(d(physics.rotX), d(physics.rotY), d(physics.rotZ)); r.mg.scale.set(physics.carScale, physics.carScale, physics.carScale); }
             r.pg.scale.set(physics.carScale, physics.carScale, physics.carScale);
-            r.mg.position.set(0, /lancer/i.test(String(r.car)) ? LANCER_Y * physics.carScale : 0, 0);
+            const ly = /lancer/i.test(String(r.car)) ? LANCER_Y * physics.carScale : 0; r.mg.position.set(0, ly, 0); r.pg.position.set(0, ly, 0);
             r.cfg = match || playerPlate;
             mpRefreshRemotePlate(r);
         }
