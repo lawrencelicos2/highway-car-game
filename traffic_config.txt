@@ -155,6 +155,32 @@
       "plateRotX": 14,
       "plateRotY": 180,
       "plateRotZ": 0
+    },
+    {
+      "name": "lamborghini_aventador_lp700-4.glb",
+      "rotX": 0,
+      "rotY": -90,
+      "rotZ": 0,
+      "scale": 1,
+      "hbW": 2,
+      "hbH": 1.5,
+      "hbL": 3.5,
+      "hbX": 0,
+      "hbY": 0.75,
+      "hbZ": 0,
+      "posX": -50.2578,
+      "posY": -24.5,
+      "posZ": 108.57,
+      "plateOn": 1,
+      "plateText": "licos0",
+      "plateW": 0.5,
+      "plateH": 0.12,
+      "plateX": 0,
+      "plateY": 0.4,
+      "plateZ": -2.26,
+      "plateRotX": 14,
+      "plateRotY": 180,
+      "plateRotZ": 0
     }
   ]
 }
