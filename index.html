@@ -367,6 +367,10 @@ body.playing #carHud { display: block; }
 body.playing #mpHud.on { display: block; }
 #mpHud .hh { font-size: 10px; letter-spacing: 2px; opacity: .7; margin-bottom: 4px; }
 #mpHud .row { display: flex; justify-content: space-between; gap: 18px; }
+#mpHud .row.me { color: #facc15; }
+.mpprow { align-items: center; }
+.mpname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; font-size: 13px; }
+#pmMpList { max-height: 160px; overflow-y: auto; }
 #mpToast { display: none; position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 90; padding: 10px 18px; border-radius: 12px; background: rgba(0,0,0,.7); border: 1px solid rgba(255,255,255,.3); color: #fff; font-size: 13px; font-weight: 700; pointer-events: none; max-width: 90vw; text-align: center; }
 #mpToast.on { display: block; }
 </style>
@@ -445,6 +449,8 @@ body.playing #mpHud.on { display: block; }
                 <div class="plrow"><input type="text" id="pmMpCode" readonly><button class="mbtn" id="pmMpCopy">COPY</button></div>
                 <div class="plrow" id="pmMpVisRow"><select id="pmMpVis"><option value="1">Public</option><option value="0">Private</option></select></div>
                 <div class="mnote" id="pmMpPlayers"></div>
+                <div class="pltitle">TELEPORT TO A PLAYER</div>
+                <div id="pmMpList" style="display:flex;flex-direction:column;gap:6px"></div>
             </div>
             <div class="pltitle">RESOLUTION</div>
             <div class="plrow" style="align-items:center">
@@ -2340,6 +2346,7 @@ body.playing #mpHud.on { display: block; }
                 }
             }
 
+            aiGroup.children.forEach(c => { c.userData.z0 = c.position.z; c.userData.kMax = undefined; c.visible = true; });
             applyCarShadows();
             refreshHitboxes(); refreshPlates();
         }
@@ -2936,7 +2943,10 @@ body.playing #mpHud.on { display: block; }
         function triggerCrashReset() {
             carsPassedCount = 0; currentSpeed = 0;
             carContainer.position.set(0, physics.carY, mpSpawnZ());
-            carAngle = 0; rebuildAiCars();
+            carAngle = 0;
+            if (mpRole === 'guest') return; // joiners only go back to their start, the traffic keeps running
+            if (mpRole === 'host') mpHostResetTraffic(); // host reset restarts the traffic for everyone
+            rebuildAiCars();
         }
 
         const hudScoreEl = document.getElementById('hud-score');
@@ -3027,16 +3037,18 @@ body.playing #mpHud.on { display: block; }
                 const oppSpan = 8 * propConfig.oppSpacingZ;
                 const trafficPaused = !!hitboxEditEntry;
                 const px = carContainer.position.x, pz = carContainer.position.z;
+                const mpTraffic = mp.trafficOn, mpS = mpTraffic ? mpTrafficS() : 0;
 
                 for (let i = 0; i < aiGroup.children.length; i++) {
                     const aiCar = aiGroup.children[i];
                     const isOpp = aiCar.userData.side === 'opp';
-                    if (!trafficPaused) aiCar.position.z -= (isOpp ? oppSpeed : aiSpeed) * physics.masterSpeed;
+                    if (mpTraffic) mpPlaceTraffic(aiCar, isOpp, mpS, pz);
+                    else if (!trafficPaused) aiCar.position.z -= (isOpp ? oppSpeed : aiSpeed) * physics.masterSpeed;
                     aiCar.position.y = physics.carY + (isOpp ? propConfig.oppOffsetY : propConfig.aiOffsetY);
                     aiCar.rotation.y = THREE.MathUtils.degToRad(isOpp ? propConfig.oppRotY : propConfig.aiRotY);
-                    if (aiCar.userData.corr) { const st = aiCar.userData.corr * 0.25; aiCar.position.z += st; aiCar.userData.corr -= st; if (Math.abs(aiCar.userData.corr) < 0.01) aiCar.userData.corr = 0; }
 
-                    if (isOpp) {
+                    if (mpTraffic) { /* shared traffic: handled in mpPlaceTraffic */ }
+                    else if (isOpp) {
                         if (!aiCar.userData.passed && aiCar.position.z < pz - 5) { aiCar.userData.passed = true; }
                         if (aiCar.position.z < pz - 120) { aiCar.position.z += oppSpan; aiCar.userData.passed = false; renewPlate(aiCar); }
                     } else {
@@ -3044,6 +3056,7 @@ body.playing #mpHud.on { display: block; }
                         if (aiCar.position.z < pz - 120) { aiCar.position.z += sameSpan; aiCar.userData.passed = false; renewPlate(aiCar); }
                     }
 
+                    if (mpTraffic && !aiCar.visible) continue;
                     aiCar.updateMatrixWorld(true);
                     tmpHitBox.setFromObject(aiCar.userData.hitGroup);
                     if (tmpHitBox.max.x > px - PLAYER_HALF_X && tmpHitBox.min.x < px + PLAYER_HALF_X &&
@@ -3652,10 +3665,11 @@ body.playing #mpHud.on { display: block; }
         // ===== MULTIPLAYER (lobby codes, peer-to-peer, host's world) =====
         const MP_TOPIC = 'highway-sandbox-lobbies-lawrencelicos2';
         const MP_PREFIX = 'hwsb-lcs2-';
-        const MP_MAX = 4;
+        const MP_MAX = 20;
+const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 behind, up to 420 ahead
         const MP_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
         let mpPending = null; // 'host' or 'guest' while picking a car, before the drive starts
-        const mp = { peer: null, conn: null, players: new Map(), remotes: new Map(), code: '', pub: true, id: 0, nextId: 1, timers: [], rtt: 0, gen: 0, hudT: 0, joinTimer: 0, dropped: false, listTimer: 0 };
+        const mp = { peer: null, conn: null, players: new Map(), remotes: new Map(), code: '', pub: true, id: 0, nextId: 1, timers: [], rtt: 0, gen: 0, hudT: 0, joinTimer: 0, dropped: false, listTimer: 0, trafficOn: false, t0: 0, sOff: 0, synced: false, metaDue: true, snapN: 0, stN: 0, listSig: '', lastMeta: '' };
         const remoteGroup = new THREE.Group(); scene.add(remoteGroup);
         const mpNum = v => (typeof v === 'number' && isFinite(v)) ? v : 0;
         const mpStr = v => String(v == null ? '' : v).slice(0, 16);
@@ -3700,6 +3714,47 @@ body.playing #mpHud.on { display: block; }
                 });
                 mpStatus(n ? n + ' public lobb' + (n > 1 ? 'ies' : 'y') + ' found. Click the code box to pick one.' : 'No public lobbies right now. You can still type a code.');
             } catch (e) { mpStatus('Could not load the public lobby list. You can still type a code.'); }
+        }
+
+        // ---- shared traffic: every car sits at a fixed spot in a list, and the HOST's scroll value S moves them all ----
+        // S counts in 60fps frames and is host time. Each car repeats every "span" along the road, and a client only shows
+        // the copy that falls inside its own window (MP_BEHIND behind to MP_AHEAD ahead), so everyone sees what the host would see there.
+        function mpTrafficS() { const now = performance.now(); return mpRole === 'host' ? (now - mp.t0) * 0.06 : now * 0.06 + mp.sOff; }
+        function mpPlaceTraffic(car, isOpp, S, pz) {
+            const speed = isOpp ? (parseFloat(propConfig.oppSpeed) || 0) : (parseFloat(propConfig.aiSpeed) || 5.0);
+            const span = 8 * (isOpp ? propConfig.oppSpacingZ : propConfig.aiSpacingZ);
+            const lo = pz - MP_BEHIND, ahead = Math.min(MP_AHEAD, span - MP_BEHIND);
+            const z = car.userData.z0 - speed * physics.masterSpeed * S;
+            const k = Math.ceil((lo - z) / span);
+            car.position.z = z + k * span;
+            car.visible = car.position.z <= pz + ahead;
+            const km = car.userData.kMax;
+            if (km === undefined) car.userData.kMax = k;
+            else if (k > km) { car.userData.kMax = k; if (!isOpp) carsPassedCount++; renewPlate(car); }
+        }
+        function mpHostResetTraffic() { mp.t0 = performance.now(); mp.metaDue = true; }
+
+        // ---- teleport + player list (pause menu) ----
+        function mpTeleportTo(id) {
+            const r = mp.remotes.get(id); if (!r || !r.init) return;
+            const p = r.root.position, a = r.root.rotation.y;
+            carContainer.position.set(p.x - Math.sin(a) * 10, physics.carY, p.z - Math.cos(a) * 10);
+            carAngle = a; currentSpeed = 0;
+            setPauseState('none');
+        }
+        function mpRenderList() {
+            const box = $m('pmMpList');
+            const list = Array.from(mp.remotes.values()).filter(r => r.init);
+            const sig = list.map(r => r.id + ':' + r.pt).join('|');
+            if (sig === mp.listSig) return;
+            mp.listSig = sig; box.innerHTML = '';
+            list.forEach(r => {
+                const row = document.createElement('div'); row.className = 'plrow mpprow';
+                const nm = document.createElement('span'); nm.className = 'mpname'; nm.textContent = r.pt || 'PLAYER';
+                const b = document.createElement('button'); b.className = 'mbtn'; b.textContent = 'TELEPORT';
+                b.addEventListener('click', () => mpTeleportTo(r.id));
+                row.appendChild(nm); row.appendChild(b); box.appendChild(row);
+            });
         }
 
         // ---- remote cars ----
@@ -3778,11 +3833,22 @@ body.playing #mpHud.on { display: block; }
         }
         function mpHudRender() {
             const el = $m('mpHud'); el.innerHTML = '';
-            const hh = document.createElement('div'); hh.className = 'hh'; hh.textContent = 'LOBBY ' + mp.code; el.appendChild(hh);
-            const add = (n, s) => { const d = document.createElement('div'); d.className = 'row'; const a = document.createElement('span'); a.textContent = n; const b = document.createElement('span'); b.textContent = s; d.appendChild(a); d.appendChild(b); el.appendChild(d); };
-            add(mpPlateText() + ' (you)', carsPassedCount);
-            mp.remotes.forEach(r => { if (r.init) add(r.pt || 'PLAYER', r.cp); });
+            const hh = document.createElement('div'); hh.className = 'hh'; hh.textContent = 'LOBBY ' + mp.code + '  -  LEADERBOARD'; el.appendChild(hh);
+            const rows = [{ n: mpPlateText(), s: carsPassedCount, me: true }];
+            mp.remotes.forEach(r => { if (r.init) rows.push({ n: r.pt || 'PLAYER', s: r.cp, me: false }); });
+            rows.sort((a, b) => b.s - a.s);
+            const add = (rank, o) => {
+                const d = document.createElement('div'); d.className = 'row' + (o.me ? ' me' : '');
+                const a = document.createElement('span'); a.textContent = rank + '. ' + o.n;
+                const b = document.createElement('span'); b.textContent = o.s;
+                d.appendChild(a); d.appendChild(b); el.appendChild(d);
+            };
+            const TOP = 8;
+            rows.slice(0, TOP).forEach((o, i) => add(i + 1, o));
+            const mi = rows.findIndex(o => o.me);
+            if (mi >= TOP) add(mi + 1, rows[mi]);
         }
+
         function mpUpdateUi() {
             const on = !!mpRole;
             $m('mpHud').classList.toggle('on', on);
@@ -3793,6 +3859,7 @@ body.playing #mpHud.on { display: block; }
             $m('pmMpVis').value = mp.pub ? '1' : '0';
             const n = 1 + (mpRole === 'host' ? Array.from(mp.players.values()).filter(p => p.ready).length : Math.max(0, mp.remotes.size));
             $m('pmMpPlayers').textContent = (mpRole === 'host' ? 'You are hosting' : 'Joined the host\'s lobby') + '\nPlayers: ' + n + ' / ' + MP_MAX;
+            mpRenderList();
         }
 
         // ---- host ----
@@ -3806,7 +3873,8 @@ body.playing #mpHud.on { display: block; }
             peer.on('open', () => {
                 if (g !== mp.gen) { try { peer.destroy(); } catch (e) {} return; }
                 mp.code = code; mpRole = 'host'; mp.players.clear(); mp.nextId = 1;
-                mp.timers.push(setInterval(mpHostSend, 66));
+                rebuildAiCars(); mp.t0 = performance.now(); mp.trafficOn = true;
+                mp.timers.push(setInterval(mpHostSend, 80));
                 mp.timers.push(setInterval(() => mpAnnounce(), 90000));
                 mpAnnounce(); mpUpdateUi(); mpHudRender();
                 mpToast('Lobby open. Code: ' + code + (mp.pub ? ' (public)' : ' (private)'));
@@ -3836,9 +3904,10 @@ body.playing #mpHud.on { display: block; }
                 if (msg.t === 'ready') {
                     pl.ready = true;
                     mpUpsertRemote(pl.id, { car: String(msg.car || ''), pt: msg.pt, po: msg.po });
-                    mpAnnounce(); mpUpdateUi(); mpToast(mpStr(msg.pt) + ' joined the lobby');
+                    mp.metaDue = true; mpAnnounce(); mpUpdateUi(); mpToast(mpStr(msg.pt) + ' joined the lobby');
                 } else if (msg.t === 'st' && pl.ready) {
                     const r = mpUpsertRemote(pl.id, { pt: msg.pt, po: msg.po });
+                    if (msg.pt !== undefined) mp.metaDue = true;
                     mpSetRemoteState(r, msg, performance.now());
                 } else if (msg.t === 'ping') { conn.send({ t: 'pong', ts: msg.ts }); }
             });
@@ -3851,15 +3920,18 @@ body.playing #mpHud.on { display: block; }
         function mpHostSend() {
             if (mpRole !== 'host' || !mp.players.size) return;
             const now = performance.now(), q = v => Math.round(v * 100) / 100;
-            const tz = aiGroup.children.map(c => q(c.position.z));
-            const pl = [{ id: 0, car: playerCarName, pt: mpPlateText(), po: getPlayerPlateCfg().plateOn ? 1 : 0, x: q(carContainer.position.x), z: q(carContainer.position.z), a: q(carAngle), v: q(currentSpeed), cp: carsPassedCount, ag: 0 }];
-            mp.players.forEach(p => {
-                if (!p.ready) return;
-                const r = mp.remotes.get(p.id);
-                if (r && r.init) pl.push({ id: p.id, car: r.car, pt: r.pt, po: r.po, x: q(r.tx), z: q(r.tz), a: q(r.ta), v: q(r.tv), cp: r.cp, ag: Math.round(now - r.tRecv) });
+            const ready = Array.from(mp.players.values()).filter(p => p.ready);
+            if (!ready.length) return;
+            const pl = [[0, q(carContainer.position.x), q(carContainer.position.z), q(carAngle), q(currentSpeed), carsPassedCount, 0]];
+            const meta = [[0, playerCarName, mpPlateText(), getPlayerPlateCfg().plateOn ? 1 : 0]];
+            ready.forEach(p => {
+                const r = mp.remotes.get(p.id); if (!r || !r.init) return;
+                pl.push([p.id, q(r.tx), q(r.tz), q(r.ta), q(r.tv), r.cp, Math.round(now - r.tRecv)]);
+                meta.push([p.id, r.car || '', r.pt, r.po]);
             });
-            const msg = { t: 'snap', tz: tz, pl: pl };
-            mp.players.forEach(p => { if (p.ready && p.conn.open) { try { p.conn.send(msg); } catch (e) {} } });
+            const msg = { t: 'snap', S: q(mpTrafficS()), pl: pl };
+            if (mp.metaDue || ++mp.snapN % 15 === 0) { msg.meta = meta; mp.metaDue = false; }
+            ready.forEach(p => { if (p.conn.open) { try { p.conn.send(msg); } catch (e) {} } });
         }
 
         // ---- guest ----
@@ -3899,33 +3971,29 @@ body.playing #mpHud.on { display: block; }
         function mpGuestSnap(m) {
             if (!gameStarted) return;
             const now = performance.now(), seen = new Set();
-            (m.pl || []).forEach(p => {
-                if (!p || p.id === mp.id) return;
-                seen.add(p.id);
-                const r = mpUpsertRemote(p.id, { car: p.car, pt: p.pt, po: p.po });
-                mpSetRemoteState(r, p, now - mpNum(p.ag));
+            if (Array.isArray(m.meta)) m.meta.forEach(e => { if (e[0] !== mp.id) mpUpsertRemote(e[0], { car: e[1], pt: e[2], po: e[3] }); });
+            (m.pl || []).forEach(e => {
+                if (!Array.isArray(e) || e[0] === mp.id) return;
+                seen.add(e[0]);
+                const r = mpUpsertRemote(e[0], {});
+                mpSetRemoteState(r, { x: e[1], z: e[2], a: e[3], v: e[4], cp: e[5] }, now - mpNum(e[6]));
             });
             Array.from(mp.remotes.keys()).forEach(id => { if (!seen.has(id)) mpRemoveRemote(id); });
-            // line the traffic up with the host's: same pattern, shifted by whole pattern lengths
-            const cars = aiGroup.children;
-            if (Array.isArray(m.tz) && m.tz.length === cars.length) {
-                const lag = mp.rtt * 0.03;
-                const aiSpeed = parseFloat(propConfig.aiSpeed) || 5.0, oppSpeed = parseFloat(propConfig.oppSpeed) || 0;
-                for (let i = 0; i < cars.length; i++) {
-                    const c = cars[i], opp = c.userData.side === 'opp';
-                    const span = 8 * (opp ? propConfig.oppSpacingZ : propConfig.aiSpacingZ);
-                    const target = mpNum(m.tz[i]) - (opp ? oppSpeed : aiSpeed) * physics.masterSpeed * lag;
-                    let d = target - c.position.z; d -= span * Math.round(d / span);
-                    c.userData.corr = d;
-                }
-            }
+            // follow the host's traffic scroll (S): small gaps are eased out, big jumps (host reset) snap
+            const target = mpNum(m.S) + mp.rtt * 0.03, diff = target - (now * 0.06 + mp.sOff);
+            if (!mp.synced || Math.abs(diff) > 20) { mp.sOff += diff; mp.synced = true; } else mp.sOff += diff * 0.2;
             mpUpdateUi();
         }
+
         function mpGuestSend() {
             if (mpRole !== 'guest' || !mp.conn || !mp.conn.open || !gameStarted) return;
             const q = v => Math.round(v * 100) / 100;
-            try { mp.conn.send({ t: 'st', x: q(carContainer.position.x), z: q(carContainer.position.z), a: q(carAngle), v: q(currentSpeed), cp: carsPassedCount, pt: mpPlateText(), po: getPlayerPlateCfg().plateOn ? 1 : 0 }); } catch (e) {}
+            const msg = { t: 'st', x: q(carContainer.position.x), z: q(carContainer.position.z), a: q(carAngle), v: q(currentSpeed), cp: carsPassedCount };
+            const pt = mpPlateText(), po = getPlayerPlateCfg().plateOn ? 1 : 0, sig = pt + '|' + po;
+            if (sig !== mp.lastMeta || ++mp.stN % 30 === 0) { msg.pt = pt; msg.po = po; mp.lastMeta = sig; }
+            try { mp.conn.send(msg); } catch (e) {}
         }
+
         function mpHostLeft() {
             const wasPlaying = gameStarted;
             mpToast('The host closed the lobby.');
@@ -3948,6 +4016,7 @@ body.playing #mpHud.on { display: block; }
                 mp.conn.send({ t: 'ready', car: playerCarName, pt: mpPlateText(), po: getPlayerPlateCfg().plateOn ? 1 : 0 });
                 mp.timers.push(setInterval(mpGuestSend, 66));
                 mp.timers.push(setInterval(() => { if (g === mp.gen && mp.conn && mp.conn.open) { try { mp.conn.send({ t: 'ping', ts: performance.now() }); } catch (e) {} } }, 2000));
+                rebuildAiCars(); mp.synced = false; mp.trafficOn = true;
                 mpUpdateUi(); mpHudRender();
             }
         }
@@ -3958,7 +4027,7 @@ body.playing #mpHud.on { display: block; }
             clearTimeout(mp.joinTimer); mp.timers.forEach(clearInterval); mp.timers = [];
             Array.from(mp.remotes.keys()).forEach(mpRemoveRemote);
             mp.players.clear(); mp.peer = null; mp.conn = null; mp.rtt = 0; mp.id = 0;
-            mpRole = null; mpHostCar = ''; mpSlot = 0; mpPending = null;
+            mpRole = null; mpHostCar = ''; mpSlot = 0; mpPending = null; mp.trafficOn = false; mp.synced = false; mp.sOff = 0; mp.listSig = '';
             setTimeout(() => { try { if (conn) conn.close(); } catch (e) {} try { if (peer) peer.destroy(); } catch (e) {} }, wasHost ? 350 : 0);
             mpUpdateUi();
         }
