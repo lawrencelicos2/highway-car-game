@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Optimized Sandbox & Infinite Highway Prop Studio</title>
     <style>
         :root {
@@ -380,13 +380,35 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>/*HW-MOBILE*/
+#touchUI{display:none;position:fixed;inset:0;z-index:30;pointer-events:none;}
+body.mobile.playing #touchUI{display:block;}
+body.mobile{touch-action:none;-webkit-user-select:none;overscroll-behavior:none;}
+body.mobile #fpsEl{left:70px !important;}
+.tb{position:absolute;pointer-events:auto;touch-action:none;-webkit-tap-highlight-color:transparent;width:78px;height:78px;border-radius:20px;border:2px solid rgba(255,255,255,.85);background:rgba(15,23,42,.38);color:#fff;font-size:30px;font-weight:900;display:flex;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);padding:0;margin:0;}
+.tb.on{background:rgba(37,99,235,.7);}
+#tPause{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));width:52px;height:52px;font-size:20px;border-radius:14px;}
+#tTurnL{bottom:max(18px,env(safe-area-inset-bottom));left:max(18px,env(safe-area-inset-left));}
+#tTurnR{bottom:max(18px,env(safe-area-inset-bottom));left:calc(max(18px,env(safe-area-inset-left)) + 90px);}
+#tGas{bottom:calc(max(18px,env(safe-area-inset-bottom)) + 90px);right:max(18px,env(safe-area-inset-right));height:96px;}
+#tBrake{bottom:max(18px,env(safe-area-inset-bottom));right:max(18px,env(safe-area-inset-right));}
+</style>
+<script>window.HW_MOBILE=false;async function __hwAll(a,f){if(!window.HW_MOBILE)return Promise.all(a.map(f));for(const x of a)await f(x);}</script>
 </head>
 <body>
 
     <div id="canvas-container"></div>
 
     <div id="menuRoot">
-        <div class="screen" id="screenBoot">
+        <div class="screen" id="screenMode">
+            <div class="mtitle">HIGHWAY SANDBOX</div>
+            <div class="msub" id="modeNote">Choose how to play before anything loads.\nMobile mode loads files one at a time and stays under 0.8 GB RAM.</div>
+            <div class="mainrow">
+                <button class="mbtn big" id="modeMobile">MOBILE MODE</button>
+                <button class="mbtn big" id="modePc">PC MODE</button>
+            </div>
+        </div>
+        <div class="screen hidden" id="screenBoot">
             <div class="mtitle">HIGHWAY SANDBOX</div>
             <div class="msub" id="bootMsg">Looking for game files on this site...</div>
             <div class="msub" id="bootManual" style="display:none">Game files weren't found on this site.<br>Select the one folder that holds your cars, skies, highways,<br>car_config.txt, traffic_config.txt and building_config.txt</div>
@@ -439,6 +461,13 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
         </div>
     </div>
 
+    <div id="touchUI">
+        <button class="tb" id="tPause">&#10074;&#10074;</button>
+        <button class="tb" id="tTurnL" data-k="a">&#9664;</button>
+        <button class="tb" id="tTurnR" data-k="d">&#9654;</button>
+        <button class="tb" id="tGas" data-k="w">&#9650;</button>
+        <button class="tb" id="tBrake" data-k="s">&#9660;</button>
+    </div>
     <div id="mpHud"></div>
     <div id="mpToast"></div>
     <div id="pauseMenu">
@@ -475,6 +504,13 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             <div id="pmSky"></div>
             <div class="pltitle">HEADLIGHTS</div>
             <div id="pmLights"></div>
+            <div class="pltitle">SHARE SETTINGS (JSON)</div>
+            <textarea id="pmShareBox" spellcheck="false" style="width:100%;height:84px;box-sizing:border-box;border-radius:8px;border:2px solid #fff;background:rgba(255,255,255,.1);color:#fff;font:11px/1.3 ui-monospace,monospace;padding:8px;resize:vertical;user-select:text"></textarea>
+            <div class="plrow">
+                <button class="mbtn" id="pmShareCopy">COPY</button>
+                <button class="mbtn" id="pmShareLoad">LOAD</button>
+            </div>
+            <div class="mnote" id="pmShareMsg" style="min-height:14px"></div>
             <div class="pltitle">LICENSE PLATE</div>
             <div class="plrow">
                 <input type="text" id="pmPlateText" maxlength="16" placeholder="Your plate text">
@@ -1957,7 +1993,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
 
         /*BLDTEX*/
         async function loadBuildingImages() {
-            await Promise.all(bldImgFiles.map(f => {
+            await __hwAll(bldImgFiles, f => {
                 if (bldImgCache.has(f.name)) return null;
                 return new Promise(async res => {
                     let url;
@@ -1972,7 +2008,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
                         res();
                     }, undefined, () => { if (url.startsWith('blob:')) URL.revokeObjectURL(url); res(); });
                 });
-            }));
+            });
         }
 
         function rebuildBuildings() {
@@ -4204,7 +4240,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
         // in a lobby, guests skip the HOST's car in traffic (so everyone builds the same traffic); the host skips its own
         function trafficSkipName() { return (mpRole === 'guest' && mpHostCar) ? mpHostCar : playerCarName; }
         function isPlayerCarEntry(m) { const n = trafficSkipName(); return !!n && m.name.toLowerCase() === n.toLowerCase(); }
-        function showScreen(id) { ['screenBoot', 'screenMain', 'screenLobby', 'screenSelect', 'screenLoading'].forEach(n => $m(n).classList.toggle('hidden', n !== id)); }
+        function showScreen(id) { ['screenMode', 'screenBoot', 'screenMain', 'screenLobby', 'screenSelect', 'screenLoading'].forEach(n => $m(n).classList.toggle('hidden', n !== id)); }
 
         function getModel(file) {
             if (!modelCache.has(file.name)) {
@@ -4413,7 +4449,62 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             if (c.cars.length || c.skies.length || c.hw.length || c.carCfgFile || c.trafficCfgFile || c.buildingCfgFile) await applyLibrary(files, 'site');
             else showManualPicker();
         }
-        autoLoadSite().catch(showManualPicker);
+        /*MOBILE-MODE*/
+        const MOB_BUDGET = 800 * 1024 * 1024;   // 0.8 GB
+        let mobBytes = 0;
+        const mobMb = () => Math.round(mobBytes / 1048576);
+        function mobEst(root) { // rough RAM cost of a model: geometry buffers + textures, x2 for the GPU copy
+            let b = 0; const sg = new Set(), st = new Set();
+            root.traverse(o => {
+                const g = o.geometry;
+                if (g && !sg.has(g)) { sg.add(g); for (const k in g.attributes) { const a = g.attributes[k]; if (a && a.array) b += a.array.byteLength; } if (g.index && g.index.array) b += g.index.array.byteLength; }
+                const ms = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+                ms.forEach(m => { for (const k in m) { const t = m[k]; if (t && t.isTexture && !st.has(t)) { st.add(t); const im = t.image; const w = im && (im.width || im.videoWidth) || 0, h = im && (im.height || im.videoHeight) || 0; b += w * h * 5.3; } } });
+            });
+            return b * 2;
+        }
+        function mobAddModel(m) { try { mobBytes += mobEst(m); } catch (e) {} }
+        async function mobSeq(files, say) { // load one file at a time
+            const out = [];
+            for (const f of files) { const m = await getModel(f); mobAddModel(m); out.push(m); say('  RAM ~' + mobMb() + ' MB / 800 MB'); }
+            return out;
+        }
+        function mobDispose(root) {
+            root.traverse(o => {
+                if (o.geometry) o.geometry.dispose();
+                (o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : []).forEach(m => { for (const k in m) { const t = m[k]; if (t && t.isTexture) t.dispose(); } m.dispose(); });
+            });
+        }
+        function mobFree() { modelCache.forEach(p => { p.then(mobDispose).catch(() => {}); }); modelCache.clear(); mobBytes = 0; }
+        function mobBindTouch() {
+            document.querySelectorAll('#touchUI [data-k]').forEach(b => {
+                const k = b.dataset.k;
+                const on = e => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (_) {} keys[k] = true; b.classList.add('on'); };
+                const off = e => { e.preventDefault(); keys[k] = false; b.classList.remove('on'); };
+                b.addEventListener('pointerdown', on);
+                ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(t => b.addEventListener(t, off));
+                b.addEventListener('contextmenu', e => e.preventDefault());
+            });
+            $m('tPause').addEventListener('pointerdown', e => {
+                e.preventDefault(); if (!gameStarted) return;
+                setPauseState(pauseState === 'none' ? 'menu' : pauseState === 'menu' ? 'none' : 'menu');
+            });
+        }
+        function bootWithMode(mobile) {
+            window.HW_MOBILE = !!mobile;
+            document.body.classList.toggle('mobile', !!mobile);
+            try { localStorage.setItem('hw_mode', mobile ? 'mobile' : 'pc'); } catch (e) {}
+            if (mobile) {
+                mobBindTouch();
+                let saved = null; try { saved = localStorage.getItem('renderScale'); } catch (e) {}
+                if (!saved) applyRes(70, false);
+            }
+            showScreen('screenBoot');
+            autoLoadSite().catch(showManualPicker);
+        }
+        $m('modeMobile').addEventListener('click', () => bootWithMode(true));
+        $m('modePc').addEventListener('click', () => bootWithMode(false));
+        try { if (window.matchMedia('(pointer:coarse)').matches) $m('modeMobile').textContent = 'MOBILE MODE (recommended)'; } catch (e) {}
         $m('changeFolderBtn').addEventListener('click', () => showScreen('screenBoot'));
         $m('playBtn').addEventListener('click', () => { mpLeave(); buildSelectScreen(); mpPrepareSelect(null); showScreen('screenSelect'); });
         $m('backBtn').addEventListener('click', () => { if (mpPending) { mpOpenLobbyScreen(); } else showScreen('screenMain'); });
@@ -4471,6 +4562,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
         }
         function setThumb(el, url) { el.innerHTML = ''; const i = document.createElement('img'); i.src = url; el.appendChild(i); }
         function queueThumb(kind, file, el) {
+            if (window.HW_MOBILE) { el.textContent = kind === 'sky' ? 'sky' : 'car'; return; } // mobile: no previews (they would load every model)
             const key = kind + '|' + file.name;
             if (thumbCache.has(key)) { setThumb(el, thumbCache.get(key)); return; }
             thumbQ.push({ kind: kind, file: file, el: el, key: key });
@@ -4540,6 +4632,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             const say = t => { log.textContent += t + '\n'; };
             await new Promise(r => setTimeout(r, 40));
             try {
+                if (HW_MOBILE) { try { mobFree(); } catch (e) {} }
                 playerCarName = selCar ? selCar.name : '';
                 const pn = trafficSkipName().toLowerCase();
 
@@ -4571,7 +4664,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
                 else {
                     if (selSky) {
                         say('Loading sky: ' + selSky.name);
-                        try { const t = await loadSkyTexture(selSky); t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; }
+                        try { const t = await loadSkyTexture(selSky); if (HW_MOBILE) mobBytes += ((t.image && t.image.width * t.image.height * 8) || 0); t.mapping = THREE.EquirectangularReflectionMapping; hdrSkyTex = t; }
                         catch (err) { say('  sky failed to load'); }
                     }
                     setCustomSky(false, true);
@@ -4580,7 +4673,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
                     say('Loading map: ' + selMap.name);
                     try {
                         const partFiles = selMap.parts || [selMap];
-                        const models = await Promise.all(partFiles.map(pf => getModel(pf)));
+                        const models = HW_MOBILE ? await mobSeq(partFiles, say) : await Promise.all(partFiles.map(pf => getModel(pf)));
                         models.forEach((hw, i) => {
                             say('  part ' + (i + 1) + '/' + models.length + ': ' + partFiles[i].name);
                             hw.traverse(c => { if (c.isMesh) { c.castShadow = false; c.receiveShadow = true; if (c.material) { c.material.side = THREE.FrontSide; c.material.needsUpdate = true; } } });
@@ -4590,14 +4683,15 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
                 }
                 if (selCar) {
                     say('Loading your car: ' + selCar.name);
-                    try { installPlayerCar(await getModel(selCar)); } catch (err) { say('  car failed to load'); }
+                    try { const pcm = await getModel(selCar); if (HW_MOBILE) mobAddModel(pcm); installPlayerCar(pcm); } catch (err) { say('  car failed to load'); }
                 }
                 for (const ent of trafficModels.slice()) {
                     if (isPlayerCarEntry(ent)) continue;
                     const f = lib.cars.find(c => c.name.toLowerCase() === ent.name.toLowerCase());
                     if (!f) { say('Traffic car not in folder: ' + ent.name); continue; }
-                    say('Loading traffic car: ' + ent.name);
-                    try { addTrafficModel(ent.name, await getModel(f)); } catch (err) { say('  failed: ' + ent.name); }
+                    if (HW_MOBILE && mobBytes > MOB_BUDGET * 0.92) { say('Skipped (0.8 GB RAM limit): ' + ent.name); continue; }
+                    say('Loading traffic car: ' + ent.name + (HW_MOBILE ? '  (RAM ~' + mobMb() + ' MB)' : ''));
+                    try { const tcm = await getModel(f); if (HW_MOBILE) mobAddModel(tcm); addTrafficModel(ent.name, tcm); } catch (err) { say('  failed: ' + ent.name); }
                 }
             } catch (err) { say('Something went wrong: ' + err); }
 
@@ -4620,7 +4714,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             $m('pauseMenu').classList.toggle('open', st === 'menu');
             $m('ui-panel').classList.toggle('open', st === 'options');
             if (gamePaused) Object.keys(keys).forEach(k => { keys[k] = false; });
-            if (st === 'menu') { syncPlateInputs(); syncPmClouds(); syncPmWeather(); syncPmSky(); syncPmDisplay(); }
+            if (st === 'menu') { try { pmShareFill(); } catch (e) {} syncPlateInputs(); syncPmClouds(); syncPmWeather(); syncPmSky(); syncPmDisplay(); }
         }
         function syncPlateInputs() {
             const c = getPlayerPlateCfg();
@@ -4644,6 +4738,7 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             carModelGroup.clear(); carModelGroup.add(carBody); carModelGroup.add(carRoof);
             playerCarName = '';
             if (audioCtx && engineGain) engineGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.02);
+            if (HW_MOBILE) { try { if (hdrSkyTex) hdrSkyTex.dispose(); mobFree(); } catch (e) {} hdrSkyTex = null; }
             $m('menuRoot').classList.remove('hidden'); showScreen('screenMain');
         }
         $m('pmResume').addEventListener('click', () => setPauseState('none'));
@@ -4683,6 +4778,41 @@ html body #carHudLabel { font-size: 10px !important; font-weight: 400 !important
             pmCloudDefs.forEach(([k]) => { $m('pm-' + k).value = envConfig[k]; $m('pmn-' + k).value = envConfig[k]; });
         }
 
+        /*SHARE-SETTINGS*/
+        function pmShareExport() {
+            const o = { hw: 1 };
+            try { o.res = Math.round(parseFloat($m('resNum').value) || 100); } catch (e) {}
+            PREF_WEATHER_KEYS.forEach(k => { if (envConfig[k] !== undefined) o[k] = envConfig[k]; });
+            return JSON.stringify(o);
+        }
+        function pmShareFill() { const b = $m('pmShareBox'); if (b && document.activeElement !== b) b.value = pmShareExport(); }
+        function pmShareApply(text) {
+            let o; try { o = JSON.parse(text); } catch (e) { return 'Invalid JSON.'; }
+            if (!o || typeof o !== 'object' || Array.isArray(o)) return 'Invalid settings.';
+            let n = 0;
+            PREF_WEATHER_KEYS.forEach(k => {
+                if (!Object.prototype.hasOwnProperty.call(o, k)) return;
+                const v = o[k];
+                if (typeof defaultEnvConfig[k] === 'string') { if (typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v)) { envConfig[k] = v; n++; } }
+                else if (typeof v === 'number' && isFinite(v)) { envConfig[k] = v; n++; }
+            });
+            if (typeof o.res === 'number' && isFinite(o.res)) { applyRes(o.res, true); n++; }
+            if (!n) return 'Nothing to load.';
+            try { applyHighwayLook(); } catch (e) {} try { applyBuildingLook(); } catch (e) {}
+            try { applyFogLook(); } catch (e) {} try { applyCarReflectance(); } catch (e) {}
+            try { applyEnvironment(); } catch (e) {} try { applyEnvIntensity(); } catch (e) {}
+            try { syncPmClouds(); syncPmWeather(); syncPmSky(); syncPmDisplay(); } catch (e) {}
+            try { syncEnvUI(); } catch (e) {}
+            updateEnvJson(); prefsSaveWeather();
+            return 'Loaded ' + n + ' settings.';
+        }
+        $m('pmShareCopy').addEventListener('click', () => {
+            const b = $m('pmShareBox'); b.value = pmShareExport(); b.select();
+            let ok = false; try { document.execCommand('copy'); ok = true; } catch (e) {}
+            try { if (navigator.clipboard) navigator.clipboard.writeText(b.value); ok = true; } catch (e) {}
+            $m('pmShareMsg').textContent = ok ? 'Copied.' : 'Select the text and copy it.';
+        });
+        $m('pmShareLoad').addEventListener('click', () => { $m('pmShareMsg').textContent = pmShareApply($m('pmShareBox').value); pmShareFill(); });
         function syncPmDisplay() { var a = $m('pm-showFps'), b = $m('pm-showStats'); if (a) a.checked = envConfig.showFps !== 0; if (b) b.checked = !!envConfig.showStats; }
         ['showFps', 'showStats'].forEach(function (k) {
             var el = $m('pm-' + k); if (!el) return;
@@ -5311,7 +5441,7 @@ const MP_BEHIND = 120, MP_AHEAD = 420; // traffic render window around you: 120 
     document.body.appendChild(box);
     var fpsEl = document.createElement('div');
     fpsEl.style.cssText = "position:fixed;top:8px;left:10px;z-index:99999;font:500 15px/1.2 'Roboto Mono',ui-monospace,monospace;color:#fff;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.55)";
-    fpsEl.textContent = 'fps: --';
+    fpsEl.id = 'fpsEl'; fpsEl.textContent = 'fps: --';
     document.body.appendChild(fpsEl);
     var frames = 0, maxGap = 0, last = performance.now(), lastT = last, lastS = null, gameFps = '-', errN = 0, lastErr = '';
     var rCalls = 0, rMs = 0, prevDC = 0, prevTri = 0, info = null, sceneTxt = '';
